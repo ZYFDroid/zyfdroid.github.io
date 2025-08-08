@@ -1,0 +1,25 @@
+{
+    "name": "夏目友人帐~叶月之记~ 全流程攻略",
+    "short_name": "叶月之记攻略",
+    "description": "全流程攻略",
+    "theme_color": "#26a69a",
+    "background_color": "#e4f8f7",
+    "display": "standalone",
+    "display_override": "standalone",
+    "orientation": "any",
+    "start_url": ".",
+    "icons": [
+        {
+            "src": "favicon.png",
+            "sizes": "256x256",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "favicon_mask.png",
+            "sizes": "256x256",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ]
+}

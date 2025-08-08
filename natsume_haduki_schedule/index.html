@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+	<meta name="apple-mobile-web-app-status-bar-style" content="default">
+	<meta name="theme-color" content="#26a69a">
+	<link rel="icon" href="favicon.ico">
+	<link rel="bookmark" type="image/png" href="favicon.png">
+	<link rel="apple-touch-icon" href="favicon.png">
+	<link rel="manifest" href="manifest.json">
+    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, viewport-fit=cover">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <title>夏目友人帐~叶月之记~ 全流程攻略</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #e0f7fa, #f9fbe7);
+            min-height: 100vh;
+            min-width: 100vw;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.92);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 100, 100, 0.15);
+            overflow: hidden;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        header {
+            background: linear-gradient(120deg, #4db6ac, #81c784);
+            color: white;
+            padding: 25px;
+            text-align: center;
+            position: relative;
+        }
+
+        h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .week-menu {
+            position: relative;
+            cursor: pointer;
+            width: 30px;
+            padding: 6px;
+            height: 30px;
+            background: rgba(255, 255, 255, 0.342);
+            border-radius: 50%;
+        }
+
+        .week-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            padding: 10px 0;
+            min-width: 150px;
+            z-index: 100;
+            display: none;
+        }
+
+        .week-dropdown.show {
+            display: block;
+        }
+
+        .week-item {
+            padding: 8px 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: #004d40;
+        }
+
+        .week-item:hover {
+            background: #e0f2f1;
+        }
+
+        .week-item.active {
+            background: #4db6ac;
+            color: white;
+        }
+
+
+
+        .date-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background: #fff;
+            border-bottom: 2px solid #e0f2f1;
+        }
+
+        .nav-btn {
+            background: #4db6ac;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 3px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .nav-btn:hover {
+            background: #26a69a;
+            box-shadow: 0 5px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .nav-btn:disabled {
+            background: #b2dfdb;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .current-date {
+            font-size: 24px;
+            font-weight: bold;
+            color: #00695c;
+        }
+
+        .schedule-container {
+            padding: 20px;
+        }
+
+        .time-section {
+            margin-bottom: 30px;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+            border-left: 5px solid;
+        }
+
+        .day-section {
+            border-left-color: #4db6ac;
+        }
+
+        .evening-section {
+            border-left-color: #ffb74d;
+        }
+
+        .night-section {
+            border-left-color: #7986cb;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            color: #00695c;
+            font-weight: bold;
+        }
+
+        .section-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-right: 12px;
+            font-size: 18px;
+        }
+
+        .day-icon {
+            background: #b2dfdb;
+            color: #004d40;
+        }
+
+        .evening-icon {
+            background: #ffe0b2;
+            color: #e65100;
+        }
+
+        .night-icon {
+            background: #c5cae9;
+            color: #283593;
+        }
+
+        .task-list {
+            list-style: none;
+        }
+
+        .task-item {
+            padding: 12px 15px;
+            background: white;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: flex-start;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+            border: 1px solid #e0f2f1;
+        }
+
+
+        .task-checkbox {
+            margin-right: 15px;
+            margin-top: 3px;
+            accent-color: #4db6ac;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .task-content {
+            flex: 1;
+        }
+
+        .task-title {
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+
+        .task-footnote {
+            font-size: 13px;
+            color: #78909c;
+            font-style: italic;
+            padding-left: 0px;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: #e0f2f1;
+            border-radius: 4px;
+            margin: 30px 20px 20px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4db6ac, #81c784);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        .progress-text {
+            text-align: center;
+            color: #00695c;
+            font-weight: 500;
+            margin-top: 5px;
+            margin-bottom: 15px;
+        }
+
+        .next-day-text {
+            text-align: center;
+            color: #00695c;
+            font-weight: 500;
+            user-select: none;
+            line-height: 30px;
+            text-align: center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 15px;
+            padding: 16px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+            border-left: 5px solid;
+            border-left-color: #4db6ac;
+        }
+
+        .cat-paw {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            opacity: 0.2;
+        }
+
+        .paw1 {
+            top: 15px;
+            left: 15px;
+            transform: rotate(-20deg);
+        }
+
+        .paw2 {
+            top: 15px;
+            right: 15px;
+            transform: rotate(20deg);
+        }
+
+        .paw3 {
+            bottom: 15px;
+            left: 15px;
+            transform: rotate(20deg);
+        }
+
+        .paw4 {
+            bottom: 15px;
+            right: 15px;
+            transform: rotate(-20deg);
+        }
+
+        .week-indicator {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            padding: 5px 10px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        @media (max-width: 600px) {
+            
+
+            h1 {
+                font-size: 22px;
+            }
+
+            .current-date {
+                font-size: 20px;
+            }
+
+            .time-section {
+                padding: 15px;
+            }
+        }
+
+		@media (max-width: 559px) {
+			body{
+				padding: 0px;
+			}
+			.container {
+				
+				border-radius: 0px;
+				box-shadow: none;
+            
+			}
+		}
+
+        .position-marker {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 15px;
+            padding: 5px 10px;
+            font-size: 12px;
+            color: #00695c;
+            z-index: 10;
+        }
+        
+    </style>
+</head>
+
+<body>
+    <div id="app" class="container">
+        <div class="position-marker" v-if="positionLoaded">
+            已恢复阅读位置: 第{{ currentWeek + 1 }}周目 {{ currentDate }}
+        </div>
+
+        <header>
+            <svg v-for="npi in 4" t="1754271273550" class="cat-paw" :class="'paw'+npi" viewBox="0 0 1304 1024"
+                version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="8730" width="24" height="24">
+                <path
+                    d="M66.37499999 452.50410371a155.38833706 132.0881207 90 1 0 264.1762423 0 155.38833706 132.0881207 90 1 0-264.1762423 0Z"
+                    fill="#ffffff" p-id="8731"></path>
+                <path
+                    d="M1051.10084849 732.42559364a127.42807778 155.38833706 12.07 1 0 64.98544379-303.90629003 127.42807778 155.38833706 12.07 1 0-64.98544379 303.90629003Z"
+                    fill="#ffffff" p-id="8732"></path>
+                <path
+                    d="M348.28417926 220.46609029a173.46609029 135.78401697 90 1 0 271.56803487 0 173.46609029 135.78401697 90 1 0-271.56803487 0Z"
+                    fill="#ffffff" p-id="8733"></path>
+                <path
+                    d="M833.98062994 438.53515768a135.78401697 173.46609029 6.71 1 0 40.53697078-344.55579081 135.78401697 173.46609029 6.71 1 0-40.53697078 344.55579081Z"
+                    fill="#ffffff" p-id="8734"></path>
+                <path
+                    d="M920.75809924 760.87041037c-9.72181403 147.19308896-151.85313188 226.17278588-320.01641484 215.00475191s-298.72483773-107.98444881-289.2440599-255.25788379 157.39697631-240.63498882 322.10539919-246.50021545c170.33261332 34.22721413 296.87688959 139.47991328 287.15507555 286.75334733z"
+                    fill="#ffffff" p-id="8735"></path>
+            </svg>
+
+            <h1>夏目贵志的夏休日程</h1>
+            <div class="subtitle">
+                <div>第{{ currentWeek + 1 }}周目</div>
+                <div class="week-menu" @click="toggleWeekMenu">
+                    <svg t="1754272139023" class="icon" viewBox="0 0 1024 1024" version="1.1"
+                        xmlns="http://www.w3.org/2000/svg" p-id="9850" width="16" height="16">
+                        <path
+                            d="M852.11 620A108 108 0 1 1 960 512a107.94 107.94 0 0 1-107.89 108zM512 620a108 108 0 1 1 107.89-108A107.95 107.95 0 0 1 512 620zM171.89 620a108 108 0 1 1 107.88-108 107.94 107.94 0 0 1-107.88 108z"
+                            fill="#ffffff" p-id="9851"></path>
+                    </svg>
+                    <div class="week-dropdown" :class="{ show: showWeekMenu }">
+                        <div class="week-item" v-for="(week, index) in weeksData" :key="index"
+                            :class="{ active: currentWeek === index }" @click.stop="selectWeek(index)">
+                            第{{ index + 1 }}周目
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="date-nav">
+            <button class="nav-btn" id="prev-day" @click="prevDay" :disabled="currentDayIndex === 0">
+                <svg t="1754272221086" class="icon" viewBox="0 0 1024 1024" version="1.1"
+                    xmlns="http://www.w3.org/2000/svg" p-id="11184" width="18" height="18">
+                    <path
+                        d="M358.997 512l311.168-311.168a42.667 42.667 0 1 0-60.33-60.33L268.5 481.834a42.667 42.667 0 0 0 0 60.33L609.835 883.5a42.667 42.667 0 0 0 60.33-60.331L358.997 512z"
+                        p-id="11185" fill="#ffffff"></path>
+                </svg>
+            </button>
+            <div class="current-date">{{ currentDate }}</div>
+            <button class="nav-btn" id="next-day" @click="nextDay"
+                :disabled="currentDayIndex === currentWeekData.length - 1">
+                <svg t="1754272467880" class="icon" viewBox="0 0 1024 1024" version="1.1"
+                    xmlns="http://www.w3.org/2000/svg" p-id="3342" width="18" height="18">
+                    <path
+                        d="M665.003 512L353.835 200.832a42.667 42.667 0 0 1 60.33-60.33L755.5 481.834a42.667 42.667 0 0 1 0 60.33L414.165 883.5a42.667 42.667 0 1 1-60.33-60.331L665.003 512z"
+                        p-id="3343" fill="#ffffff"></path>
+                </svg>
+
+            </button>
+        </div>
+
+        <div class="schedule-container">
+            <!-- 白天部分 -->
+            <div class="time-section day-section" v-if="currentDay.events.day.length != 0">
+                <div class="section-header">
+                    <div class="section-icon day-icon">
+                        <svg t="1754272735930" class="icon" viewBox="0 0 1024 1024" version="1.1"
+                            xmlns="http://www.w3.org/2000/svg" p-id="16316" width="24" height="24">
+                            <path
+                                d="M900.8 432.96a137.92 137.92 0 0 1-58.24-140.16c14.72-76.16 27.52-101.12 8.64-120.32s-43.84-6.08-120.32 8.64a137.92 137.92 0 0 1-140.16-58.24C547.52 58.88 538.88 32 512 32s-35.52 26.88-79.04 91.2a137.92 137.92 0 0 1-140.16 57.92C216.64 166.4 192 153.6 172.48 172.48s-6.08 43.84 8.64 120.32a137.92 137.92 0 0 1-58.24 140.16C58.88 476.48 32 485.12 32 512s26.88 35.52 91.2 79.04a137.92 137.92 0 0 1 57.92 140.16c-14.72 76.16-27.52 100.8-8.64 120.32s43.84 6.08 120.32-8.64a137.92 137.92 0 0 1 140.16 58.24c43.52 64 52.16 90.88 79.04 90.88s35.52-26.88 79.04-90.88a137.92 137.92 0 0 1 140.16-58.24c76.16 14.72 101.12 27.52 120.32 8.64s6.08-43.84-8.64-120.32a137.92 137.92 0 0 1 57.92-140.16C965.12 547.52 992 538.88 992 512s-26.88-35.52-91.2-79.04zM512 752a240 240 0 1 1 240-240 240 240 0 0 1-240 240zM512 352a160 160 0 1 0 160 160 160 160 0 0 0-160-160z"
+                                fill="#004d40" p-id="16317"></path>
+                        </svg>
+                    </div>
+                    <h2>白天</h2>
+                </div>
+                <ul class="task-list">
+                    <li class="task-item" v-for="(task, index) in currentDay.events.day" :key="'day-'+index">
+                        <input type="checkbox" class="task-checkbox" :id="getTaskId('day', index)"
+                            v-model="task.completed" @change="updateTaskStatus('day', index)">
+                        <div class="task-content">
+                            <div class="task-title">{{ task.title }}</div>
+                            <div class="task-footnote" v-if="task.footnote">{{ task.footnote }}</div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- 傍晚部分 -->
+            <div class="time-section evening-section" v-if="currentDay.events.evening.length != 0">
+                <div class="section-header">
+                    <div class="section-icon evening-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 640 640">
+                            <path fill="#e65100"
+                                d="M485.6 49.2C490.5 51.2 494.1 55.6 495.1 60.8L512 144L595.2 160.8C600.4 161.9 604.7 165.4 606.8 170.3C608.9 175.2 608.3 180.8 605.4 185.2L558.5 255.9L605.4 326.6C608.3 331 608.9 336.6 606.8 341.5C604.7 346.4 600.4 350 595.2 351L533 363.7C521.1 355 507.9 348.1 493.6 343.3C491.1 330.6 486.8 318.6 480.9 307.6C490.4 292.7 496 275 496 255.9C496 202.9 453 159.9 400 159.9C352.1 159.9 312.4 195 305.2 240.8C278.7 220.5 245.7 208.3 209.8 207.9L194.7 185.2C191.8 180.8 191.2 175.2 193.3 170.3C195.4 165.4 199.7 161.8 204.9 160.8L288 144L304.8 60.8C305.9 55.6 309.4 51.3 314.3 49.2C319.2 47.1 324.8 47.7 329.2 50.6L400 97.6L470.7 50.7C475.1 47.8 480.7 47.2 485.6 49.3zM448 256C448 259.8 447.6 263.5 446.7 267.1C425 250.1 397.7 240 368 240C363.4 240 358.9 240.2 354.5 240.7C360.9 221.7 378.9 208 400 208C426.5 208 448 229.5 448 256zM128 576C75 576 32 533 32 480C32 437.5 59.6 401.4 97.9 388.8C96.6 382.1 96 375.1 96 368C96 306.1 146.1 256 208 256C251.1 256 288.5 280.3 307.2 316C321.9 298.9 343.7 288 368 288C412.2 288 448 323.8 448 368C448 373.5 447.4 378.8 446.4 384C446.9 384 447.5 384 448 384C501 384 544 427 544 480C544 533 501 576 448 576L128 576z" />
+                        </svg>
+                    </div>
+                    <h2>傍晚</h2>
+                </div>
+                <ul class="task-list">
+                    <li class="task-item" v-for="(task, index) in currentDay.events.evening" :key="'evening-'+index">
+                        <input type="checkbox" class="task-checkbox" :id="getTaskId('evening', index)"
+                            v-model="task.completed" @change="updateTaskStatus('evening', index)">
+                        <div class="task-content">
+                            <div class="task-title">{{ task.title }}</div>
+                            <div class="task-footnote" v-if="task.footnote">{{ task.footnote }}</div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- 夜晚部分 -->
+            <div class="time-section night-section" v-if="currentDay.events.night.length != 0">
+                <div class="section-header">
+                    <div class="section-icon night-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 640 640">
+                            <path fill="#283593"
+                                d="M320 64C178.6 64 64 178.6 64 320C64 461.4 178.6 576 320 576C388.8 576 451.3 548.8 497.3 504.6C504.6 497.6 506.7 486.7 502.6 477.5C498.5 468.3 488.9 462.6 478.8 463.4C473.9 463.8 469 464 464 464C362.4 464 280 381.6 280 280C280 207.9 321.5 145.4 382.1 115.2C391.2 110.7 396.4 100.9 395.2 90.8C394 80.7 386.6 72.5 376.7 70.3C358.4 66.2 339.4 64 320 64z" />
+                        </svg>
+                    </div>
+                    <h2>夜晚</h2>
+                </div>
+                <ul class="task-list">
+                    <li class="task-item" v-for="(task, index) in currentDay.events.night" :key="'night-'+index">
+                        <input type="checkbox" class="task-checkbox" :id="getTaskId('night', index)"
+                            v-model="task.completed" @change="updateTaskStatus('night', index)">
+                        <div class="task-content">
+                            <div class="task-title">{{ task.title }}</div>
+                            <div class="task-footnote" v-if="task.footnote">{{ task.footnote }}</div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+			
+			<div class="next-day-text" 
+                v-if="currentDayIndex < currentWeekData.length - 1" >
+                <div @click="nextDay" style="cursor: pointer;">
+                
+					&gt;&gt;&nbsp;前往下一天&nbsp;&gt;&gt;
+                </div>
+			</div>
+			
+        </div>
+
+        <div class="progress-bar">
+            <div class="progress-fill" :style="{ width: progress + '%' }"></div>
+        </div>
+        <div class="progress-text">夏休进度: {{ progress }}%</div>
+        <div class="progress-text">
+			<a style="font-size: 12px;color: gray; padding: 6px;" target="_blank" href="https://gitee.com/ZYFDroid/NatsumeHaduki_GameWalkthrough">关于本攻略</a>
+        </div>
+		
+    </div>
+
+    <script>
+        (function () {
+
+            var rawData = [{"gameweek":"一周目","days":[{"date":"7月30日","events":{"day":[],"evening":[],"night":[{"title":"回到房间，睡觉","footnote":null}]}},{"date":"7月31日","events":{"day":[{"title":"前往河滩，和田沼对话。","footnote":null}],"evening":[],"night":[{"title":"调查窗户，和犬之会对话","footnote":null}]}},{"date":"8月1日","events":{"day":[{"title":"出门","footnote":null},{"title":"前往每个地方探索","footnote":"熟悉各个地方的地图"},{"title":"前往厨房，和塔子对话，接取委托","footnote":null},{"title":"前往大门修理门框","footnote":null},{"title":"前往厨房，和塔子对话，完成委托","footnote":null}],"evening":[{"title":"前往住宅区（七辻屋方向），和猫咪老师对话，接取委托","footnote":null},{"title":"前往七辻屋，解锁商店功能","footnote":null},{"title":"购买6个三色团子，和1个豆沙包（不要提交委托）","footnote":null},{"title":"前往河滩，找到一目和牛面，对话接取委托","footnote":null},{"title":"前往上学路和路边，分别和任务人物对话","footnote":null},{"title":"在古内高中门口找到犬之会的扇子","footnote":null},{"title":"回到河滩，完成任务","footnote":null}],"night":[{"title":"前往厨房，给塔子和滋各自送一个三色团子","footnote":null},{"title":"回到房间，睡觉","footnote":null}]}},{"date":"8月2日","events":{"day":[{"title":"前往厨房，和塔子对话，接取委托并完成","footnote":null}],"evening":[{"title":"给塔子和滋各自送一个三色团子","footnote":null},{"title":"前往七辻公园，和多轨&田沼对话","footnote":null}],"night":[{"title":"前往厨房，和塔子对话","footnote":null},{"title":"回到房间，点击书架，阅读时代小说","footnote":null},{"title":"睡觉","footnote":null}]}},{"date":"8月3日","events":{"day":[{"title":"钓鱼大会（自动触发）","footnote":null}],"evening":[],"night":[{"title":"选择书桌，完成作业","footnote":null},{"title":"给塔子和滋各自送一个三色团子","footnote":null},{"title":"睡觉","footnote":null}]}},{"date":"8月4日","events":{"day":[{"title":"保存到存档9","footnote":null},{"title":"前往七辻公园，和多轨&田沼对话","footnote":null}],"evening":[{"title":"前往七辻屋，购买6个三色团子","footnote":null},{"title":"前往河滩，触发名取事件","footnote":null}],"night":[{"title":"给塔子和滋各自送一个三色团子","footnote":null},{"title":"回到房间，选择书桌，完成作业","footnote":null},{"title":"睡觉","footnote":null}]}},{"date":"8月5日","events":{"day":[{"title":"前往多轨家，和田沼对话","footnote":null}],"evening":[],"night":[{"title":"给塔子和滋各自送一个三色团子","footnote":null},{"title":"回到房间，选择书桌，完成作业","footnote":null},{"title":"睡觉","footnote":null}]}},{"date":"8月6日","events":{"day":[{"title":"前往多轨家，和田沼对话","footnote":null}],"evening":[],"night":[{"title":"给塔子和滋各自送一个三色团子","footnote":null},{"title":"回到房间，选择书桌，完成作业","footnote":null},{"title":"睡觉","footnote":null}]}},{"date":"8月7日","events":{"day":[{"title":"前往七辻屋，购买6个三色团子","footnote":null},{"title":"前往商店街，和笹田对话","footnote":null}],"evening":[{"title":"前往七森方向，和丙对话，解锁换装（不要提交任务）","footnote":null},{"title":"前往梯田方向，在森林中选择左边的路，来到草原，调查石像","footnote":null}],"night":[{"title":"给塔子和滋各自送一个三色团子","footnote":null},{"title":"回到房间，选择书桌，完成作业，答案2-1-3","footnote":null},{"title":"睡觉","footnote":null}]}},{"date":"8月8日","events":{"day":[{"title":"前往七辻公园，和田沼&多轨对话","footnote":null}],"evening":[{"title":"前往七辻屋，购买8个三色团子","footnote":null},{"title":"和猫咪老师对话，提交任务","footnote":null}],"night":[{"title":"试胆大会，选择左边的签（田沼）","footnote":null},{"title":"给塔子和滋各自送一个三色团子","footnote":null},{"title":"睡觉","footnote":null}]}},{"date":"8月9日","events":{"day":[{"title":"前往商店街方向，和田沼对话","footnote":null},{"title":"前往八原方向，在七森商店购买西瓜","footnote":null},{"title":"保存到存档10","footnote":null},{"title":"前往田沼家，和田沼对话","footnote":null},{"title":"选项任选，美食=猫咪老师，旅行票=名取周一，手工制品=田沼","footnote":"可以读取存档9收集不同选项的差分。"}],"evening":[],"night":[{"title":"给塔子和滋各自送一个三色团子","footnote":null},{"title":"调查床铺上方顶柜，进行整理","footnote":null},{"title":"睡觉","footnote":null}]}},{"date":"8月10日","events":{"day":[{"title":"前往商店街方向，和西村对话","footnote":null}],"evening":[{"title":"保存到存档9","footnote":null},{"title":"前往厨房，和滋叔对话，选择：是","footnote":null},{"title":"前往七辻屋方向，购买6个三色团子","footnote":null},{"title":"前往七辻公园，和西村对话","footnote":null},{"title":"分别前往住宅区（七辻屋方向）-河滩-上学路-商店街和西村对话","footnote":null}],"night":[{"title":"和塔子对话","footnote":null},{"title":"给塔子和滋各自送一个三色团子","footnote":null},{"title":"选择书架，阅读杂志","footnote":null},{"title":"睡觉","footnote":null}]}},{"date":"8月11日","events":{"day":[{"title":"前往何㒘站方向，前往可爱森林，购买三个莓子蛋糕","footnote":"可爱森林在咖啡店往画面右下角走的方向"},{"title":"前往梯田方向，和同学们对话","footnote":null}],"evening":[],"night":[{"title":"和滋叔对话，提交任务","footnote":null},{"title":"给塔子和滋各自送一个三色团子","footnote":null},{"title":"睡觉","footnote":null}]}},{"date":"8月12日","events":{"day":[{"title":"和同学一起调查地方史","footnote":null},{"title":"选择：说说七森的事","footnote":null}],"evening":[{"title":"前往七辻屋方向，和猫咪老师对话","footnote":null},{"title":"前往七辻屋方向->树下","footnote":null}],"night":[{"title":"给塔子和滋各自送一个三色团子","footnote":null},{"title":"睡觉","footnote":null}]}},{"date":"8月13日","events":{"day":[{"title":"前往二叶水坝方向->汽水泉，和多轨&田沼对话","footnote":null}],"evening":[],"night":[{"title":"给塔子和滋各自送一个三色团子","footnote":null},{"title":"睡觉","footnote":null}]}},{"date":"8月14日","events":{"day":[{"title":"前往七辻公园，和田沼&多轨对话","footnote":null}],"evening":[{"title":"前往河滩方向->河边小路，调查闪光点","footnote":null}],"night":[{"title":"给塔子和滋各自送一个三色团子","footnote":null},{"title":"睡觉","footnote":null}]}},{"date":"8月15日","events":{"day":[{"title":"换上浴衣","footnote":null},{"title":"前往多轨家，和多轨对话。","footnote":null}],"evening":[{"title":"前往河滩->河边小路,和多轨&田沼对话","footnote":null}],"night":[{"title":"前往烟花大会，选项「谢谢您」","footnote":null},{"title":"在中间的摊子购买一份烤鱿鱼","footnote":null},{"title":"往左走离开摊子，和猫咪老师对话，选项：不用了","footnote":null},{"title":"选项：神社深处","footnote":null},{"title":"可选：换回常服","footnote":null},{"title":"给塔子和滋各自送一个三色团子","footnote":null},{"title":"睡觉","footnote":null}]}},{"date":"8月16日","events":{"day":[{"title":"前往河滩->河边小路,和田沼&多轨对话","footnote":null}],"evening":[{"title":"前往商店街，和笹田对话，选项3-3-2","footnote":null}],"night":[{"title":"给塔子和滋各自送一个三色团子","footnote":null},{"title":"睡觉","footnote":null}]}},{"date":"8月17日","events":{"day":[{"title":"前往厨房，和塔子对话","footnote":null}],"evening":[],"night":[{"title":"睡觉","footnote":null}]}},{"date":"8月18日","events":{"day":[{"title":"前往跳蚤市场","footnote":null},{"title":"选项：看店铺","footnote":null},{"title":"和左右两边的店主对话，购买招财猫和樱花画","footnote":null},{"title":"和同学对话，选择 不用了","footnote":null}],"evening":[],"night":[{"title":"睡觉","footnote":null}]}},{"date":"8月19日","events":{"day":[{"title":"前往七森之路，和多轨&田沼对话","footnote":null}],"evening":[],"night":[{"title":"睡觉","footnote":null}]}},{"date":"8月20日","events":{"day":[{"title":"前往多轨家,和田沼&多轨对话","footnote":"完成多轨&田沼线"}],"evening":[],"night":[{"title":"睡觉","footnote":null}]}},{"date":"8月21日","events":{"day":[{"title":"更改布置，将樱花画挂在墙上","footnote":null},{"title":"和塔子对话，完成委托后获得逗猫草","footnote":null},{"title":"选项：改日再说","footnote":null}],"evening":[{"title":"前往多轨家，调查闪光点","footnote":null},{"title":"前往八原方向-三森商店","footnote":"需要靠近红色贩卖机触发剧情"},{"title":"购买毛茸茸玩偶和羽毛逗猫草","footnote":null}],"night":[{"title":"前往盂兰盆节","footnote":null},{"title":"选项：在外面观察","footnote":null}]}},{"date":"8月22日","events":{"day":[{"title":"前往田沼家，和田沼对话，选项：帮忙打扫，并完成委托","footnote":null}],"evening":[{"title":"前往商店街，和北本对话","footnote":null},{"title":"回家和塔子对话","footnote":null},{"title":"回到商店街，和北本对话","footnote":null}],"night":[{"title":"睡觉","footnote":null}]}},{"date":"8月23日","events":{"day":[{"title":"前往商店街，和多轨对话","footnote":null}],"evening":[{"title":"前往大门前，和塔子对话","footnote":null},{"title":"前往河滩方向，调查闪光点","footnote":null},{"title":"前往神社方向，调查闪光点","footnote":null},{"title":"前往上学路，调查闪光点","footnote":null},{"title":"回到大门前，和塔子对话","footnote":null},{"title":"回到房间，触发对话","footnote":null},{"title":"前往咖啡店前，和名取对话","footnote":null}],"night":[{"title":"睡觉","footnote":null}]}},{"date":"8月24日","events":{"day":[{"title":"前往商店街，和西村对话","footnote":null}],"evening":[{"title":"前往七辻公园前，调查闪光点","footnote":null},{"title":"和名取对话","footnote":null}],"night":[{"title":"睡觉","footnote":null}]}},{"date":"8月25日","events":{"day":[{"title":"前往七辻公园前，和西村对话","footnote":null},{"title":"选项任意","footnote":null},{"title":"前往三森商店门口，和西村对话","footnote":null}],"evening":[{"title":"进入商店，购买杯装冰淇淋","footnote":null},{"title":"前往河滩，和泥鳅胡子对话","footnote":null},{"title":"和泥鳅胡子对话，提交 杯装冰淇淋","footnote":null}],"night":[{"title":"睡觉","footnote":null}]}},{"date":"8月26日","events":{"day":[{"title":"选项：是夏日祭","footnote":null},{"title":"换装：浴衣","footnote":null},{"title":"前往七辻屋，靠近红色伞附近，触发剧情","footnote":null},{"title":"调查发光点，完成委托","footnote":null}],"evening":[{"title":"前往七辻屋，购买30个七辻豆沙包","footnote":null},{"title":"前往河滩","footnote":null},{"title":"前往七辻屋，靠近七辻屋门口，触发对话","footnote":null},{"title":"前往河滩-河边小路，调查祠堂，选择供奉","footnote":null},{"title":"前往七辻屋方向（住宅区），调查台阶左边的石头凹陷，选择供奉","footnote":null},{"title":"前往七森方向-露神之祠，调查树下的祠堂，选择供奉","footnote":null},{"title":"前往八原方向，前往八原森林，调查祠堂","footnote":null},{"title":"再次调查祠堂，选择供奉达成成就","footnote":null},{"title":"前往七森方向，和丙对话","footnote":null}],"night":[{"title":"前往夏日祭典","footnote":null},{"title":"购买一份烤鱿鱼","footnote":null},{"title":"往右走，和猫咪老师对话，选项：去打招呼","footnote":null},{"title":"选项：去参拜","footnote":null},{"title":"可选：换回常服","footnote":null},{"title":"睡觉","footnote":null}]}},{"date":"8月27日","events":{"day":[{"title":"前往河滩，和名取对话","footnote":null}],"evening":[],"night":[{"title":"保存存档10","footnote":null},{"title":"睡觉","footnote":null}]}},{"date":"8月28日","events":{"day":[{"title":"选择：邀请塔子阿姨和滋叔","footnote":null},{"title":"前往河滩，和名取对话","footnote":null},{"title":"夜晚：和家人放烟花","footnote":null},{"title":"保存到存档9","footnote":null},{"title":"读取存档10","footnote":null},{"title":"睡觉到明天","footnote":null},{"title":"选择：邀请学校的同学","footnote":null},{"title":"前往河滩，和名取对话","footnote":null},{"title":"夜晚：和同学一起放烟花","footnote":null},{"title":"睡觉","footnote":null}],"evening":[],"night":[]}},{"date":"8月29日","events":{"day":[{"title":"换装：学校的夏季制服","footnote":null},{"title":"前往河滩，和名取对话","footnote":null},{"title":"选项：我来演","footnote":null},{"title":"和名取对话","footnote":null},{"title":"选项任意","footnote":null}],"evening":[],"night":[{"title":"睡觉","footnote":null}]}},{"date":"8月30日","events":{"day":[{"title":"前往三森商店，购买脆心巧克力","footnote":null},{"title":"前往神社，和名取对话","footnote":null}],"evening":[{"title":"前往神社后方，和名取对话，获得 名取的照片","footnote":null}],"night":[{"title":"将名取的照片送给猫咪老师","footnote":null},{"title":"睡觉","footnote":null}]}},{"date":"8月31日","events":{"day":[{"title":"保存到存档10","footnote":null},{"title":"前往厨房，和塔子阿姨对话","footnote":null},{"title":"选择：在家里休息","footnote":null},{"title":"选项任意","footnote":null},{"title":"选项任意","footnote":null},{"title":"选项任意","footnote":null},{"title":"读取存档10","footnote":null},{"title":"前往多轨家，调查大门，选择：按门铃","footnote":null},{"title":"一周目到此结束","footnote":null}],"evening":[],"night":[]}}]},{"gameweek":"二周目","days":[{"date":"8月1日","events":{"day":[{"title":"出门","footnote":null},{"title":"前往厨房，和塔子对话，接取委托","footnote":null},{"title":"前往大门修理门框","footnote":null},{"title":"前往厨房，和塔子对话，完成委托","footnote":null}],"evening":[{"title":"前往住宅区（七辻屋方向），和猫咪老师对话，接取委托","footnote":null},{"title":"前往七辻屋，解锁商店功能","footnote":null},{"title":"购买1个豆沙包（不要提交委托）","footnote":null},{"title":"前往河滩，找到一目和牛面，对话接取委托","footnote":null},{"title":"前往上学路和路边，分别和任务人物对话","footnote":null},{"title":"在古内高中门口找到犬之会的扇子","footnote":null},{"title":"回到河滩，完成任务","footnote":null}],"night":[{"title":"回到房间，睡觉","footnote":null}]}},{"date":"8月2日","events":{"day":[{"title":"前往七辻屋，和猫咪老师对话提交委托","footnote":null}],"evening":[{"title":"前往七辻公园，和多轨&田沼对话","footnote":null}],"night":[{"title":"前往厨房，和塔子对话","footnote":null},{"title":"回到房间，点击书架，阅读时代小说","footnote":null},{"title":"睡觉","footnote":null}]}},{"date":"8月3日","events":{"day":[{"title":"钓鱼大会（自动触发）","footnote":null}],"evening":[],"night":[{"title":"选择书桌，完成作业","footnote":null},{"title":"睡觉","footnote":null}]}},{"date":"8月4日","events":{"day":[{"title":"前往河滩，触发名取事件","footnote":null}],"evening":[{"title":"前往七辻公园，和西村对话","footnote":null},{"title":"分别前往住宅区（七辻屋方向）-河滩-上学路-商店街和西村对话","footnote":null}],"night":[{"title":"选择书架，阅读杂志","footnote":null},{"title":"睡觉","footnote":null}]}},{"date":"8月5日","events":{"day":[{"title":"前往咖啡店前，和名取对话","footnote":null}],"evening":[{"title":"前往七森方向，和丙对话，解锁换装（不要提交任务）","footnote":null},{"title":"前往八原方向-三森商店，购买扑克牌和8个脆心巧克力","footnote":null},{"title":"前往神社方向，和名取对话","footnote":null},{"title":"和名取对话，获得名取的照片","footnote":null}],"night":[{"title":"完成作业","footnote":null},{"title":"和猫咪老师玩翻牌游戏（以解锁相关成就）","footnote":"提示：可以用Switch截图功能作弊。另外会有看似相同，但实际上表情不一样的人物形象出现，请注意。"},{"title":"保存到存档9","footnote":null},{"title":"睡觉","footnote":null}]}},{"date":"8月6日","events":{"day":[{"title":"前往七辻公园，向名取赠送脆心巧克力","footnote":null},{"title":"前往七辻公园，和名取对话","footnote":null}],"evening":[{"title":"前往神社方向-紫云英田-神社入口-参道-何㒘神社，调查发光的箱子","footnote":null},{"title":"再次调查发光的箱子","footnote":null}],"night":[{"title":"完成作业，睡觉","footnote":null}]}},{"date":"8月7日","events":{"day":[{"title":"可选：前往神社，抽签，这一步直到抽到大吉为止（成就）","footnote":null},{"title":"前往河滩","footnote":"提示：有捷径可以走，先前往上学路方向，到达公交车站，然后往前走，即可快速到达名取所在的桥前，后同。"},{"title":"向名取赠送脆心巧克力","footnote":null},{"title":"和名取对话","footnote":null}],"evening":[],"night":[{"title":"完成作业，睡觉","footnote":null}]}},{"date":"8月8日","events":{"day":[{"title":"可选：前往神社，抽签，这一步直到抽到大吉为止（成就）","footnote":null},{"title":"前往河滩，向名取赠送脆心巧克力","footnote":null},{"title":"和名取对话","footnote":null}],"evening":[],"night":[{"title":"前往试胆大会","footnote":null},{"title":"选择：中间的签（多轨）","footnote":null},{"title":"完成作业，睡觉（选项2-1-3）","footnote":null}]}},{"date":"8月9日","events":{"day":[{"title":"可选：前往神社，抽签，这一步直到抽到大吉为止（成就）","footnote":null},{"title":"换装：学校的夏季制服","footnote":null},{"title":"前往河滩，向名取赠送脆心巧克力","footnote":null},{"title":"和名取对话","footnote":null},{"title":"选项：我来演","footnote":null},{"title":"和名取对话","footnote":null},{"title":"选项：救命","footnote":null}],"evening":[],"night":[{"title":"睡觉","footnote":null}]}},{"date":"8月10日","events":{"day":[{"title":"可选：前往神社，抽签，这一步直到抽到大吉为止（成就）","footnote":null},{"title":"前往神社方向，向名取赠送脆心巧克力","footnote":null},{"title":"前往咖啡店方向，和名取对话","footnote":null},{"title":"和名取玩翻牌并获胜","footnote":"提示：可以用Switch截图功能作弊。另外，会有大量名取的牌但表情不一样，请注意这一点。"}],"evening":[{"title":"前往神社方向，和名取对话","footnote":null}],"night":[{"title":"睡觉","footnote":null}]}},{"date":"8月11日","events":{"day":[{"title":"可选：前往神社，抽签，这一步直到抽到大吉为止（成就）","footnote":null},{"title":"前往三森商店，购买15个脆心巧克力","footnote":null},{"title":"前往河滩，向名取赠送脆心巧克力","footnote":null},{"title":"和名取对话","footnote":null}],"evening":[],"night":[{"title":"睡觉","footnote":null}]}},{"date":"8月12日","events":{"day":[{"title":"可选：前往神社，抽签，这一步直到抽到大吉为止（成就）","footnote":null},{"title":"和同学一起调查地方史","footnote":null},{"title":"选择：先不说这件事","footnote":null}],"evening":[],"night":[{"title":"和名取一起看萤火虫","footnote":null},{"title":"睡觉","footnote":null}]}},{"date":"8月13日","events":{"day":[{"title":"可选：前往神社，抽签，这一步直到抽到大吉为止（成就）","footnote":null},{"title":"前往河滩，向名取赠送脆心巧克力","footnote":null},{"title":"和名取对话","footnote":null}],"evening":[{"title":"前往七辻屋方向，和猫咪老师对话","footnote":null},{"title":"前往大树下","footnote":null}],"night":[{"title":"睡觉","footnote":null}]}},{"date":"8月14日","events":{"day":[{"title":"可选：前往神社，抽签，这一步直到抽到大吉为止（成就）","footnote":null},{"title":"前往河滩，向名取赠送脆心巧克力","footnote":null},{"title":"和名取对话","footnote":null}],"evening":[{"title":"前往神社方向，调查发光点","footnote":null}],"night":[{"title":"睡觉","footnote":null}]}},{"date":"8月15日","events":{"day":[{"title":"换上浴衣","footnote":null},{"title":"找到名取，赠送脆心巧克力","footnote":"笔者编写到此处时，名取在天满宫，进入方法是在商店街蹭着左边的墙往前走（摇杆往正上方推），就能进去。"},{"title":"前往七森之路，调查从右往左第一个发光点","footnote":null}],"evening":[{"title":"继续往左前往露神之祠","footnote":null},{"title":"和名取对话","footnote":null},{"title":"选项：不在这些人中","footnote":null},{"title":"选项：不在这些人中","footnote":null},{"title":"选项：右边","footnote":null}],"night":[{"title":"前往烟花大会，选项「谢谢您」","footnote":null},{"title":"在中间的摊子购买一份烤鱿鱼","footnote":null},{"title":"往左走离开摊子，和猫咪老师对话，选项：不用了","footnote":null},{"title":"选项：鸟居附近","footnote":null},{"title":"可选：换回常服","footnote":null},{"title":"睡觉","footnote":null}]}},{"date":"8月16日","events":{"day":[{"title":"可选：前往神社，抽签，这一步直到抽到大吉为止（成就）","footnote":null},{"title":"前往咖啡店前，向名取赠送脆心巧克力","footnote":null},{"title":"和名取对话","footnote":null}],"evening":[{"title":"前往商店街，和笹田对话，选项3-3-2","footnote":null}],"night":[{"title":"选择书架，阅读恐怖小说","footnote":null},{"title":"睡觉","footnote":null}]}},{"date":"8月17日","events":{"day":[{"title":"可选：前往神社，抽签，这一步直到抽到大吉为止（成就）","footnote":null},{"title":"前往河滩，向名取赠送脆心巧克力","footnote":null},{"title":"和名取对话","footnote":null}],"evening":[{"title":"前往七森之路，和丙对话","footnote":null}],"night":[{"title":"睡觉","footnote":null}]}},{"date":"8月18日","events":{"day":[{"title":"前往跳蚤市场","footnote":null},{"title":"选项：去买食物","footnote":null},{"title":"和笹田对话，选择 不用了","footnote":null}],"evening":[],"night":[{"title":"睡觉","footnote":null}]}},{"date":"8月19日","events":{"day":[{"title":"可选：前往神社，抽签，这一步直到抽到大吉为止（成就）","footnote":null},{"title":"前往咖啡店前，向名取赠送脆心巧克力","footnote":null},{"title":"和名取对话","footnote":null}],"evening":[{"title":"前往八原森林，和中级对话","footnote":null}],"night":[{"title":"睡觉","footnote":null}]}},{"date":"8月20日","events":{"day":[{"title":"可选：前往神社，抽签，这一步直到抽到大吉为止（成就）","footnote":null},{"title":"前往神社后方，和名取对话","footnote":null},{"title":"前往八原森林，触发对话","footnote":"前往八原森林也有捷径，在神社方向的道桥，左边缺口可以往下走，直达八原森林"},{"title":"前往商店街，和西村对话","footnote":null}],"evening":[{"title":"前往七森之路，调查所有闪光点","footnote":null},{"title":"前往露神之祠，调查闪光点","footnote":null},{"title":"回到七森之路，调查所有闪光点","footnote":null},{"title":"回到露神之祠，和小狐狸对话","footnote":null},{"title":"睡觉到晚上","footnote":null}],"night":[{"title":"睡觉","footnote":null}]}},{"date":"8月21日","events":{"day":[{"title":"可选：前往神社，抽签，这一步直到抽到大吉为止（成就）","footnote":null},{"title":"前往八原森林-三篠沼泽，和妖怪们对话","footnote":null}],"evening":[{"title":"前往七森之路，触发对话","footnote":null}],"night":[{"title":"前往盂兰盆节","footnote":null},{"title":"选项：加入盂兰盆舞的队伍","footnote":null}]}},{"date":"8月22日","events":{"day":[{"title":"可选：前往神社，抽签，这一步直到抽到大吉为止（成就）","footnote":null},{"title":"前往神社，向名取赠送脆心巧克力","footnote":null},{"title":"和名取对话","footnote":null}],"evening":[{"title":"前往露神祠堂，和小狐狸对话","footnote":null}],"night":[{"title":"睡觉","footnote":null}]}},{"date":"8月23日","events":{"day":[{"title":"可选：前往神社，抽签，这一步直到抽到大吉为止（成就）","footnote":null},{"title":"和塔子阿姨对话，完成委托","footnote":null},{"title":"选项：改天再说","footnote":null}],"evening":[{"title":"前往商店街，和北本对话","footnote":null},{"title":"前往厨房和塔子阿姨对话","footnote":null},{"title":"回到商店街，和北本对话","footnote":null}],"night":[{"title":"睡觉","footnote":null}]}},{"date":"8月24日","events":{"day":[{"title":"可选：前往神社，抽签，这一步直到抽到大吉为止（成就）","footnote":null},{"title":"前往河滩，向名取赠送脆心巧克力","footnote":null},{"title":"和名取对话","footnote":null}],"evening":[],"night":[{"title":"睡觉","footnote":null}]}},{"date":"8月25日","events":{"day":[{"title":"可选：前往神社，抽签，这一步直到抽到大吉为止（成就）","footnote":null},{"title":"前往神社背面，和名取对话","footnote":null}],"evening":[{"title":"向名取赠送脆心巧克力","footnote":null},{"title":"前往咖啡厅前，和名取对话","footnote":null},{"title":"前往三篠沼泽，和妖怪们对话","footnote":null}],"night":[{"title":"睡觉","footnote":null}]}},{"date":"8月26日","events":{"day":[{"title":"选项：是夏日祭","footnote":null},{"title":"换装：浴衣","footnote":null},{"title":"前往二叶水坝方向的山路，和名取对话","footnote":null}],"evening":[],"night":[{"title":"前往夏日祭","footnote":null},{"title":"购买三份烤鱿鱼","footnote":null},{"title":"往右走，和猫咪老师对话，选项：去打招呼","footnote":null},{"title":"选项：去神社后面看看风景（若已经获得狐狸面具则无此选项）","footnote":null},{"title":"更改布置，将获得的狐狸面具挂在墙上","footnote":null},{"title":"睡觉","footnote":null}]}},{"date":"8月27日","events":{"day":[{"title":"可选：前往神社，抽签，这一步直到抽到大吉为止（成就）","footnote":null},{"title":"前往咖啡店前，和名取对话","footnote":null}],"evening":[{"title":"前往神社后山，和名取对话","footnote":"至此，完成名取线和名取礼物委托"}],"night":[{"title":"保存到存档9","footnote":null},{"title":"调查被褥，会出现两个「睡到明天」，选第二个","footnote":"将会出现特殊剧情"}]}},{"date":"8月28日","events":{"day":[{"title":"选项：邀请塔子阿姨和滋叔","footnote":null},{"title":"可选：前往神社，抽签，这一步直到抽到大吉为止（成就）","footnote":null},{"title":"前往七辻公园前，和西村对话","footnote":null},{"title":"选项任选","footnote":null},{"title":"和西村对话","footnote":null}],"evening":[{"title":"睡觉到晚上","footnote":null}],"night":[{"title":"邀请塔子阿姨和滋叔放烟花","footnote":null},{"title":"可选：更改布置，将名取的海报挂在墙上","footnote":null},{"title":"可选：欣赏名取的海报","footnote":null},{"title":"睡觉","footnote":null}]}},{"date":"8月29日","events":{"day":[{"title":"可选：前往神社，抽签，这一步直到抽到大吉为止（成就）","footnote":null},{"title":"前往三森商店，购买杯装冰淇淋","footnote":null},{"title":"前往河滩，和泥鳅胡子对话","footnote":null},{"title":"提交杯装冰淇淋","footnote":null}],"evening":[{"title":"前往八原方向的小桥，调查发光点","footnote":null},{"title":"前往八原附近的神社，和红峰对话","footnote":null}],"night":[{"title":"睡觉","footnote":null}]}},{"date":"8月30日","events":{"day":[{"title":"可选：前往神社，抽签，这一步直到抽到大吉为止（成就）","footnote":null},{"title":"前往七辻屋，靠近红色伞附近，触发剧情","footnote":null},{"title":"调查发光点","footnote":null}],"evening":[{"title":"补全家具图鉴","footnote":"现在你应该有了18000多G，前往三森商店，将你想要的东西购买下来吧"},{"title":"休息到晚上","footnote":null}],"night":[{"title":"睡觉","footnote":null}]}},{"date":"8月31日","events":{"day":[{"title":"前往上学路-公交车站前","footnote":null},{"title":"和名取对话","footnote":null},{"title":"二周目到此结束","footnote":null}],"evening":[],"night":[]}}]},{"gameweek":"三周目","days":[{"date":"8月1日","events":{"day":[{"title":"出门","footnote":null},{"title":"触发找日记本的任务","footnote":null},{"title":"前往家里玄关，调查发光点","footnote":null}],"evening":[{"title":"前往住宅区（七辻屋方向），和猫咪老师对话，接取委托","footnote":null},{"title":"前往七辻屋，解锁商店功能","footnote":null},{"title":"购买6个豆沙包和1个七辻羊羹（不要提交委托）","footnote":null},{"title":"前往河滩，找到一目和牛面，对话接取委托","footnote":null},{"title":"前往上学路和路边，分别和任务人物对话","footnote":null},{"title":"在古内高中门口找到犬之会的扇子","footnote":null},{"title":"回到河滩，完成任务","footnote":null}],"night":[{"title":"睡觉","footnote":null}]}},{"date":"8月2日","events":{"day":[{"title":"前往七辻屋，和猫咪老师对话提交委托","footnote":null}],"evening":[{"title":"前往七辻公园，和多轨&田沼对话","footnote":null}],"night":[{"title":"前往厨房，和塔子对话","footnote":null},{"title":"回到房间，点击书架，阅读时代小说","footnote":null},{"title":"向猫咪老师赠送七辻豆沙包","footnote":null},{"title":"睡觉","footnote":null}]}},{"date":"8月3日","events":{"day":[{"title":"钓鱼大会（自动触发）","footnote":null}],"evening":[],"night":[{"title":"选择书桌，完成作业","footnote":null},{"title":"向猫咪老师赠送七辻豆沙包","footnote":null},{"title":"睡觉","footnote":null}]}},{"date":"8月4日","events":{"day":[{"title":"前往河滩，触发名取事件","footnote":null}],"evening":[{"title":"前往二叶水坝的山中小路","footnote":null},{"title":"和的场静司对话","footnote":null}],"night":[{"title":"向猫咪老师赠送七辻豆沙包","footnote":null},{"title":"完成作业","footnote":null},{"title":"睡觉","footnote":null}]}},{"date":"8月5日","events":{"day":[{"title":"前往咖啡店前，和名取对话","footnote":null}],"evening":[{"title":"前往七森方向，和丙对话，解锁换装（不要提交任务）","footnote":null},{"title":"前往七森之路，调查所有闪光点","footnote":null},{"title":"前往露神之祠，调查闪光点","footnote":null},{"title":"回到七森之路，调查所有闪光点","footnote":null},{"title":"回到露神之祠，和小狐狸对话","footnote":null},{"title":"前往三森商店，购买以下物品","footnote":"五个黄瓜，五个脆心巧克力，1个护手霜"},{"title":"前往七辻屋，购买2个七辻豆沙包","footnote":null},{"title":"前往神社方向，和名取对话","footnote":null},{"title":"和名取对话，获得名取的照片","footnote":null}],"night":[{"title":"向猫咪老师赠送七辻豆沙包","footnote":null},{"title":"完成作业","footnote":null},{"title":"睡觉","footnote":null}]}},{"date":"8月6日","events":{"day":[{"title":"前往厨房和塔子阿姨对话","footnote":null},{"title":"完成除草委托","footnote":null},{"title":"选项：改日再说","footnote":null}],"evening":[{"title":"换上任意一件衣服","footnote":null},{"title":"前往露神祠堂，和小狐狸对话","footnote":null}],"night":[{"title":"向猫咪老师赠送七辻豆沙包","footnote":null},{"title":"完成作业","footnote":null},{"title":"睡觉","footnote":null}]}},{"date":"8月7日","events":{"day":[{"title":"前往七森之路，和丙对话，提交任务","footnote":null}],"evening":[{"title":"前往三森商店，购买以下物品","footnote":"3个护手霜，6个脆心巧克力，5个黄瓜"},{"title":"前往三篠沼泽","footnote":null},{"title":"保存到存档9","footnote":"赠送前，可以先按A键对话，确保赠送的是正确的人物。"},{"title":"向红峰赠送七辻豆沙包","footnote":null},{"title":"向中级赠送七辻豆沙包","footnote":null},{"title":"向河童赠送黄瓜","footnote":null},{"title":"向丙赠送护手霜","footnote":null},{"title":"向小狐狸赠送脆心巧克力","footnote":null},{"title":"向泥鳅胡子赠送塔子饼干","footnote":null},{"title":"向三篠赠送七辻羊羹","footnote":null},{"title":"前往七辻屋方向，购买1个七辻羊羹和1个七辻豆沙包","footnote":null},{"title":"前往七辻公园，和西村对话","footnote":null},{"title":"分别前往住宅区（七辻屋方向）-河滩-上学路-商店街和西村对话","footnote":null}],"night":[{"title":"选择书架，阅读杂志","footnote":null},{"title":"向猫咪老师赠送塔子饼干","footnote":null},{"title":"睡觉","footnote":null}]}},{"date":"8月8日","events":{"day":[{"title":"前往七辻屋，购买4个豆沙包","footnote":null},{"title":"分别找到妖怪们，赠送以下物品","footnote":null},{"title":"向红峰赠送七辻豆沙包","footnote":null},{"title":"向泥鳅胡子赠送塔子饼干","footnote":null},{"title":"向三篠赠送七辻羊羹","footnote":null},{"title":"向中级赠送七辻豆沙包","footnote":null},{"title":"向小狐狸赠送脆心巧克力","footnote":null},{"title":"向河童赠送黄瓜","footnote":null},{"title":"向丙赠送护手霜","footnote":null},{"title":"前往商店街，向北本对话","footnote":null},{"title":"前往厨房，和塔子阿姨对话","footnote":null},{"title":"回到商店街，和北本对话","footnote":null},{"title":"选项：递给黄瓜","footnote":null}],"evening":[{"title":"和笹田对话，选项3-3-2","footnote":null}],"night":[{"title":"前往试胆大会，选择：右边的签","footnote":null},{"title":"向猫咪老师赠送七辻豆沙包","footnote":null},{"title":"选择书架，阅读恐怖小说","footnote":null},{"title":"睡觉","footnote":null}]}},{"date":"8月9日","events":{"day":[{"title":"前往七辻屋，购买5个七辻豆沙包","footnote":null},{"title":"前往三森商店，购买2个护手霜","footnote":null},{"title":"前往七辻屋方向，和西村对话，选项任意","footnote":null},{"title":"和西村对话","footnote":null}],"evening":[{"title":"前往七辻屋方向，和猫咪老师对话","footnote":null},{"title":"前往七辻屋，和猫咪老师对话","footnote":null},{"title":"在七辻屋购买2个刨冰","footnote":null},{"title":"和猫咪老师对话","footnote":null}],"night":[{"title":"完成作业（选项2-1-3）","footnote":null},{"title":"向猫咪老师赠送刨冰","footnote":null},{"title":"睡觉","footnote":null}]}},{"date":"8月10日","events":{"day":[{"title":"前往大门口，和猫咪老师对话","footnote":null},{"title":"前往咖啡店门口，和猫咪老师对话","footnote":null}],"evening":[],"night":[{"title":"向猫咪老师赠送七辻豆沙包","footnote":null},{"title":"睡觉","footnote":null}]}},{"date":"8月11日","events":{"day":[{"title":"前往商店街，和西村对话","footnote":null}],"evening":[{"title":"前往可爱森林，购买2个巧克力蛋糕","footnote":null},{"title":"前往三森商店，购买1个杯装冰淇淋","footnote":null},{"title":"前往河滩，和小胡子对话","footnote":null},{"title":"提交：杯装冰淇淋","footnote":null}],"night":[{"title":"向猫咪老师赠送七辻豆沙包","footnote":null},{"title":"睡觉","footnote":null}]}},{"date":"8月12日","events":{"day":[{"title":"和同学一起前往调查地方史","footnote":null},{"title":"选项：先不说这件事","footnote":null}],"evening":[],"night":[{"title":"向猫咪老师赠送七辻豆沙包","footnote":null},{"title":"睡觉","footnote":null}]}},{"date":"8月13日","events":{"day":[{"title":"分别找到妖怪们，赠送以下物品","footnote":null},{"title":"向红峰赠送七辻豆沙包","footnote":null},{"title":"向泥鳅胡子赠送巧克力蛋糕","footnote":null},{"title":"向三篠赠送巧克力蛋糕","footnote":null},{"title":"向中级赠送七辻豆沙包","footnote":null},{"title":"向小狐狸赠送脆心巧克力","footnote":null},{"title":"向河童赠送黄瓜","footnote":null},{"title":"向丙赠送护手霜","footnote":null},{"title":"前往七辻屋方向，和猫咪老师对话","footnote":null},{"title":"前往树下","footnote":null}],"evening":[{"title":"前往厨房，和塔子阿姨对话","footnote":null},{"title":"前往八原方向，和中级对话","footnote":null}],"night":[{"title":"向猫咪老师赠送烤鱿鱼","footnote":null},{"title":"睡觉","footnote":null}]}},{"date":"8月14日","events":{"day":[{"title":"调查窗户","footnote":null},{"title":"前往八原方向-小桥，调查闪光点","footnote":null},{"title":"前往八原附近的神社，和红峰对话","footnote":null}],"evening":[{"title":"前往三森商店","footnote":null},{"title":"购买扑克牌","footnote":null},{"title":"前往藤原家大门，和中级对话","footnote":null},{"title":"在小游戏中获胜","footnote":"提示：可以用Switch截图功能作弊。"}],"night":[{"title":"向猫咪老师赠送猫醉","footnote":null},{"title":"睡觉","footnote":null}]}},{"date":"8月15日","events":{"day":[{"title":"换上浴衣","footnote":null},{"title":"分别找到妖怪们，赠送以下物品","footnote":null},{"title":"向红峰赠送七辻豆沙包","footnote":null},{"title":"向泥鳅胡子赠送猫醉","footnote":null},{"title":"向三篠赠送猫醉","footnote":null},{"title":"向中级赠送七辻豆沙包","footnote":null},{"title":"向小狐狸赠送脆心巧克力","footnote":null},{"title":"向河童赠送黄瓜","footnote":null},{"title":"向丙赠送护手霜","footnote":null},{"title":"前往七辻公园前，和名取对话","footnote":null}],"evening":[{"title":"前往七辻公园前，和多轨&田沼对话","footnote":null}],"night":[{"title":"前往烟花大会","footnote":null},{"title":"选项：谢谢您","footnote":null},{"title":"购买一个苹果糖，一个烤鱿鱼和三份炒面","footnote":null},{"title":"向右走到达神社，和的场静司对话","footnote":null},{"title":"和的场静司对话","footnote":null},{"title":"保存到存档10","footnote":null},{"title":"向的场静司赠送名取的照片","footnote":null},{"title":"读取存档10","footnote":null},{"title":"向的场静司赠送脆心巧克力","footnote":null},{"title":"读取存档10","footnote":null},{"title":"向的场静司赠送苹果糖","footnote":null},{"title":"和的场静司对话","footnote":null},{"title":"向左走，和猫咪老师对话，选项：不用了","footnote":null},{"title":"选项：附近的森林","footnote":null},{"title":"向猫咪老师赠送烤鱿鱼","footnote":null},{"title":"睡觉","footnote":null}]}},{"date":"8月16日","events":{"day":[{"title":"前往可爱森林，购买一个巧克力蛋糕","footnote":null},{"title":"分别找到妖怪们，赠送以下物品","footnote":null},{"title":"向红峰赠送七辻豆沙包","footnote":null},{"title":"向泥鳅胡子赠送巧克力蛋糕","footnote":null},{"title":"向三篠赠送塔子饼干","footnote":null},{"title":"向中级赠送七辻豆沙包","footnote":null},{"title":"向小狐狸赠送脆心巧克力","footnote":null},{"title":"向河童赠送黄瓜","footnote":null},{"title":"向丙赠送护手霜","footnote":null},{"title":"前往上学路，和小狐狸对话","footnote":null},{"title":"向河童对话，提交三个黄瓜","footnote":null}],"evening":[{"title":"前往三森商店，购买3个黄瓜","footnote":null},{"title":"前往七辻屋方向，靠近红色伞触发剧情","footnote":null},{"title":"前往七辻屋，购买三个豆沙包和一个羊羹","footnote":null},{"title":"调查闪光点","footnote":null}],"night":[{"title":"向猫咪老师赠送猫醉","footnote":null},{"title":"睡觉","footnote":null}]}},{"date":"8月17日","events":{"day":[{"title":"调查窗户","footnote":null},{"title":"前往三森商店，购买1个护手霜","footnote":null},{"title":"向猫咪老师赠送猫醉","footnote":null},{"title":"休息到傍晚","footnote":null}],"evening":[{"title":"前往七森之路，参加妖怪们的试胆大会","footnote":null}],"night":[{"title":"睡觉","footnote":null}]}},{"date":"8月18日","events":{"day":[{"title":"参加跳蚤市场","footnote":null},{"title":"选项：去买食物","footnote":null},{"title":"和多轨对话，选项：不用了","footnote":null}],"evening":[],"night":[{"title":"向猫咪老师赠送猫醉","footnote":null},{"title":"睡觉","footnote":null}]}},{"date":"8月19日","events":{"day":[{"title":"前往三森商店，购买1个杯装冰淇淋","footnote":null},{"title":"分别找到妖怪们，赠送以下物品","footnote":null},{"title":"向泥鳅胡子赠送杯装冰淇淋","footnote":null},{"title":"向三篠赠送七辻羊羹","footnote":null},{"title":"向中级赠送七辻豆沙包","footnote":null},{"title":"向小狐狸赠送脆心巧克力","footnote":null},{"title":"向红峰赠送七辻豆沙包","footnote":null},{"title":"向河童赠送黄瓜","footnote":null},{"title":"向丙赠送护手霜","footnote":null},{"title":"回到夏目的房间，和猫咪老师对话","footnote":null},{"title":"前往商店街，和西村对话","footnote":null}],"evening":[],"night":[{"title":"睡觉","footnote":null}]}},{"date":"8月20日","events":{"day":[{"title":"前往八原附近的神社，和中级对话","footnote":null},{"title":"前往七森之路，和丙对话","footnote":null},{"title":"提交一个猫醉","footnote":null}],"evening":[{"title":"前往三森商店，购买2个杯装冰淇淋和1个护手霜","footnote":null},{"title":"分别找到妖怪们，赠送以下物品","footnote":null},{"title":"向泥鳅胡子赠送杯装冰淇淋","footnote":null},{"title":"向丙赠送护手霜","footnote":null},{"title":"向三篠赠送猫醉","footnote":null},{"title":"向小狐狸赠送脆心巧克力","footnote":null},{"title":"向中级赠送七辻豆沙包","footnote":null},{"title":"向河童赠送黄瓜","footnote":null},{"title":"前往七辻屋，购买1个七辻豆沙包","footnote":null},{"title":"向红峰赠送七辻豆沙包","footnote":null},{"title":"回到房间，休息到晚上","footnote":null}],"night":[{"title":"睡觉","footnote":null}]}},{"date":"8月21日","events":{"day":[{"title":"前往七森之路，和小狐狸对话","footnote":null},{"title":"保存到存档9","footnote":null},{"title":"前往神社背面，调查闪光点","footnote":"神社正面的闪光点不要管它，那个是抽签任务的。"}],"evening":[],"night":[{"title":"前往盂兰盆节","footnote":null},{"title":"选项：加入盂兰盆舞的队伍","footnote":null}]}},{"date":"8月22日","events":{"day":[{"title":"前往七辻屋，购买4个豆沙包","footnote":null},{"title":"分别找到妖怪们，赠送以下物品","footnote":null},{"title":"向泥鳅胡子赠送杯装冰淇淋","footnote":null},{"title":"向三篠赠送猫醉","footnote":null},{"title":"向中级赠送七辻豆沙包","footnote":null},{"title":"向小狐狸赠送脆心巧克力","footnote":null},{"title":"向红峰赠送七辻豆沙包","footnote":null},{"title":"向丙赠送护手霜","footnote":null},{"title":"向河童赠送黄瓜","footnote":null},{"title":"前往河滩，和名取对话","footnote":null}],"evening":[],"night":[{"title":"睡觉","footnote":null}]}},{"date":"8月23日","events":{"day":[{"title":"前往三森商店，购买1个杯装冰淇淋和1个护手霜","footnote":null},{"title":"分别找到妖怪们，赠送以下物品","footnote":null},{"title":"向泥鳅胡子赠送杯装冰淇淋","footnote":null},{"title":"向三篠赠送猫醉","footnote":null},{"title":"向中级赠送七辻豆沙包","footnote":null},{"title":"向小狐狸赠送脆心巧克力","footnote":null},{"title":"向红峰赠送七辻豆沙包","footnote":null},{"title":"向河童赠送黄瓜","footnote":null},{"title":"向丙赠送护手霜","footnote":null},{"title":"回到房间，调查窗户","footnote":null},{"title":"前往河滩方向的桥下","footnote":null},{"title":"选项：向右移动","footnote":null}],"evening":[],"night":[{"title":"睡觉","footnote":null}]}},{"date":"8月24日","events":{"day":[{"title":"前往河滩，和名取对话","footnote":null}],"evening":[],"night":[{"title":"睡觉","footnote":null}]}},{"date":"8月25日","events":{"day":[{"title":"前往多轨家，和田沼对话","footnote":null}],"evening":[],"night":[{"title":"睡觉","footnote":null}]}},{"date":"8月26日","events":{"day":[{"title":"选项：是夏日祭","footnote":null},{"title":"换装：浴衣","footnote":null},{"title":"前往多轨家，和田沼对话","footnote":null}],"evening":[],"night":[{"title":"前往夏日祭","footnote":null},{"title":"购买三份烤鱿鱼","footnote":null},{"title":"往右走，和猫咪老师对话，选项：去打招呼","footnote":null},{"title":"选项：去玩金鱼捞","footnote":null},{"title":"睡觉","footnote":null}]}},{"date":"8月27日","events":{"day":[{"title":"换装：学校的夏季制服","footnote":null},{"title":"前往河滩，和名取对话","footnote":null},{"title":"选项：果然还是不行","footnote":null},{"title":"和名取对话","footnote":null},{"title":"选项任意","footnote":null}],"evening":[],"night":[{"title":"保存到存档10","footnote":null},{"title":"睡觉","footnote":null}]}},{"date":"8月28日","events":{"day":[{"title":"选项：一个人放烟花","footnote":null},{"title":"调查被褥，休息到晚上","footnote":null},{"title":"前往放烟花遇到的场静司","footnote":null},{"title":"保存到存档9","footnote":null},{"title":"读取存档10","footnote":null},{"title":"睡觉到明天","footnote":null},{"title":"选项：和犬之会一起放烟花","footnote":null},{"title":"休息到晚上","footnote":null},{"title":"出发和犬之会放烟花","footnote":null},{"title":"保存到存档9","footnote":null},{"title":"读取存档10","footnote":null},{"title":"睡觉到明天","footnote":null},{"title":"选项：和猫咪老师一起放烟花","footnote":null},{"title":"休息到晚上","footnote":null},{"title":"出发和猫咪老师放烟花","footnote":null},{"title":"保存到存档9","footnote":null},{"title":"睡觉到明天","footnote":null}],"evening":[],"night":[]}},{"date":"8月29日","events":{"day":[{"title":"前往商店街，和笹田对话。","footnote":null}],"evening":[{"title":"前往三森商店，购买蝴蝶逗猫草。","footnote":null},{"title":"回到家里，和猫咪老师玩逗猫草小游戏","footnote":null},{"title":"可选：使用蝴蝶逗猫草进行游戏，只有这个可以获得10000分以上。","footnote":null},{"title":"游戏技巧是：左边的摇杆可以快速顺时针/逆时针转动","footnote":null},{"title":"逗猫棒移动的时候，猫咪老师会眼睛闭上蓄力，当猫咪老师再次睁开眼睛，赶紧连按A键闪避","footnote":null},{"title":"当狂热模式下，左摇杆的动作可以停，此时只需要连续按动A键即可","footnote":null},{"title":"若不擅长此类需要反应的小游戏，也可以放弃收集这类成就。对剧情和标题画面的图鉴收集无影响","footnote":"作者终于在第三次（第一次自己玩，第二次写攻略，第三次测攻略）收集到了10000分"},{"title":"调查被褥，选择休息到晚上","footnote":null}],"night":[{"title":"睡觉到明天","footnote":null}]}},{"date":"8月30日","events":{"day":[{"title":"睡觉到晚上","footnote":null}],"evening":[],"night":[{"title":"睡觉到明天","footnote":null}]}},{"date":"8月31日","events":{"day":[{"title":"保存到存档10","footnote":null},{"title":"和猫咪老师对话","footnote":null},{"title":"选项：和猫咪老师一起度过","footnote":null},{"title":"前往随想录-画廊，欣赏和猫咪老师睡觉的CG","footnote":null},{"title":"读取存档10","footnote":null},{"title":"调查窗户","footnote":null},{"title":"选项：参加","footnote":null},{"title":"三周目到此结束","footnote":null}],"evening":[],"night":[]}}]},{"gameweek":"四周目","days":[{"date":"8月1日","events":{"day":[{"title":"出门","footnote":null},{"title":"触发找日记本的任务","footnote":null},{"title":"前往家里玄关，调查发光点","footnote":null}],"evening":[{"title":"前往住宅区（七辻屋方向），和猫咪老师对话，接取委托","footnote":null},{"title":"前往七辻屋，解锁商店功能","footnote":null},{"title":"购买4个豆沙包和1个七辻羊羹（不要提交委托）","footnote":null},{"title":"前往河滩，找到一目和牛面，对话接取委托","footnote":null},{"title":"前往上学路和路边，分别和任务人物对话","footnote":null},{"title":"在古内高中门口找到犬之会的扇子","footnote":null},{"title":"回到河滩，完成任务","footnote":null}],"night":[{"title":"睡觉","footnote":null}]}},{"date":"8月2日","events":{"day":[{"title":"前往七辻屋，和猫咪老师对话提交委托","footnote":null}],"evening":[{"title":"前往七辻公园，和多轨&田沼对话","footnote":null}],"night":[{"title":"前往厨房，和塔子对话","footnote":null},{"title":"回到房间，点击书架，阅读时代小说","footnote":null},{"title":"睡觉","footnote":null}]}},{"date":"8月3日","events":{"day":[{"title":"钓鱼大会（自动触发）","footnote":null}],"evening":[],"night":[{"title":"不要做作业，这个周目都不要做作业","footnote":null},{"title":"睡觉","footnote":null}]}},{"date":"8月4日","events":{"day":[{"title":"前往梯田方向-桥-森林中右边小路-堂宇","footnote":null},{"title":"前往何㒘站方向-商店街-咖啡店前-何㒘站","footnote":"解锁成就 小镇漫步家"},{"title":"前往七辻公园，和多轨&田沼对话","footnote":null}],"evening":[{"title":"前往梯田方向-桥-森林中右边小路-堂宇，并保存到存档9","footnote":"解锁画廊相关内容"},{"title":"前往何㒘站，保存到存档9","footnote":"解锁画廊相关内容"},{"title":"前往七辻公园，和西村对话","footnote":null},{"title":"前往河滩，触发名取事件","footnote":null}],"night":[{"title":"睡觉","footnote":null}]}},{"date":"8月5日","events":{"day":[{"title":"前往七森方向，和丙对话，解锁换装（不要提交任务）","footnote":null},{"title":"分别前往住宅区（七辻屋方向）-河滩-上学路-商店街和西村对话","footnote":null}],"evening":[{"title":"前往七辻屋，购买3个七辻羊羹和3个豆沙包","footnote":null},{"title":"前往三森商店，4个黄瓜4个巧克力","footnote":null},{"title":"前往咖啡店前，和名取对话","footnote":null}],"night":[{"title":"睡觉","footnote":null}]}},{"date":"8月6日","events":{"day":[{"title":"前往三森商店旁边的自动贩卖机，购买5个混合果汁","footnote":null},{"title":"前往多轨家，和田沼对话","footnote":null}],"evening":[],"night":[{"title":"睡觉","footnote":null}]}},{"date":"8月7日","events":{"day":[{"title":"前往多轨家，和田沼对话","footnote":null}],"evening":[],"night":[{"title":"睡觉","footnote":null}]}},{"date":"8月8日","events":{"day":[{"title":"前往商店街，和笹田对话","footnote":null}],"evening":[{"title":"和笹田对话，答案3-3-2","footnote":null}],"night":[{"title":"参加试胆大会，选项任意","footnote":null},{"title":"选择书架，阅读杂志","footnote":null},{"title":"睡觉","footnote":null}]}},{"date":"8月9日","events":{"day":[{"title":"找到西村，北本和笹田，赠送礼物","footnote":null},{"title":"向西村赠送混合果汁","footnote":null},{"title":"向北本赠送黄瓜","footnote":null},{"title":"向笹田赠送巧克力","footnote":null},{"title":"前往多轨家，调查闪光点","footnote":null},{"title":"前往七森商店，在附近走动，确保触发一段剧情","footnote":null},{"title":"前往七森商店，购买可爱的玩偶","footnote":null},{"title":"前往七森商店，购买11个巧克力和11个黄瓜","footnote":null},{"title":"在自动售货机购买2个混合果汁","footnote":null},{"title":"回到多轨家，和多轨对话","footnote":null}],"evening":[{"title":"找到多轨，赠送七辻豆沙包","footnote":null},{"title":"前往田沼家，和田沼对话","footnote":null},{"title":"选项：帮忙打扫","footnote":null},{"title":"完成田沼的委托","footnote":null}],"night":[{"title":"睡觉","footnote":null}]}},{"date":"8月10日","events":{"day":[{"title":"找到田沼，赠送七辻羊羹","footnote":null},{"title":"找到多轨，赠送七辻豆沙包","footnote":null},{"title":"找到笹田，赠送巧克力","footnote":null},{"title":"找到北本，赠送黄瓜","footnote":null},{"title":"前往商店街","footnote":null},{"title":"和西村对话","footnote":null}],"evening":[{"title":"找到西村，赠送混合果汁","footnote":"西村可能在何㒘站的阴影中，有点难以找到"},{"title":"前往七辻屋方向，和猫咪老师对话","footnote":null},{"title":"前往树下","footnote":null}],"night":[{"title":"睡觉","footnote":null}]}},{"date":"8月11日","events":{"day":[{"title":"找到田沼，赠送七辻羊羹","footnote":null},{"title":"找到多轨，赠送七辻豆沙包","footnote":null},{"title":"找到笹田，赠送巧克力","footnote":null},{"title":"找到北本，赠送黄瓜","footnote":null},{"title":"找到西村，赠送混合果汁","footnote":null},{"title":"前往七辻屋红色伞附近，触发剧情","footnote":null},{"title":"前往七辻屋购买9个豆沙包和5个羊羹","footnote":null},{"title":"回到厨房，和塔子阿姨对话，并完成塔子的委托","footnote":null},{"title":"选项：改天再说","footnote":null}],"evening":[{"title":"前往七辻屋门口，调查闪光点","footnote":null}],"night":[{"title":"睡觉","footnote":null}]}},{"date":"8月12日","events":{"day":[{"title":"和同学一起前往调查地方史","footnote":null},{"title":"选项：说说七森的事","footnote":null}],"evening":[{"title":"找到田沼，赠送七辻羊羹","footnote":null},{"title":"找到西村，赠送混合果汁","footnote":null},{"title":"找到笹田，赠送巧克力","footnote":null},{"title":"前往七辻公园，和田沼对话","footnote":null},{"title":"前往三森商店，触发剧情","footnote":null},{"title":"前往露神之祠，和田沼对话","footnote":null}],"night":[{"title":"和同学一起看萤火虫","footnote":null},{"title":"睡觉","footnote":null}]}},{"date":"8月13日","events":{"day":[{"title":"前往商店街，和北本对话","footnote":null},{"title":"回到家，和塔子阿姨对话","footnote":null},{"title":"回到商店街，和北本对话","footnote":null},{"title":"选项：算了","footnote":null}],"evening":[{"title":"前往商店街，和多轨对话","footnote":null}],"night":[{"title":"睡觉","footnote":null}]}},{"date":"8月14日","events":{"day":[{"title":"找到多轨，赠送七辻豆沙包","footnote":null},{"title":"找到田沼，赠送七辻羊羹","footnote":null},{"title":"找到笹田，赠送巧克力","footnote":null},{"title":"去公园前，找到西村","footnote":null},{"title":"选项任意","footnote":null},{"title":"和西村对话","footnote":null}],"evening":[{"title":"找到北本，赠送黄瓜","footnote":null},{"title":"找到西村，赠送混合果汁","footnote":null},{"title":"前往商店街，和西村对话","footnote":null},{"title":"前往三森商店，购买7个混合果汁和扑克牌","footnote":null},{"title":"回到商店街和西村对话","footnote":null},{"title":"在小游戏中获胜","footnote":"提示：可以用Switch截图功能作弊。"}],"night":[{"title":"睡觉","footnote":null}]}},{"date":"8月15日","events":{"day":[{"title":"换上浴衣","footnote":null},{"title":"找到笹田，赠送巧克力","footnote":null},{"title":"找到北本，赠送黄瓜","footnote":null},{"title":"找到西村，赠送混合果汁","footnote":null},{"title":"找到田沼，赠送七辻羊羹","footnote":null},{"title":"找到多轨，赠送七辻豆沙包","footnote":null},{"title":"前往紫云英田，和多轨对话","footnote":null},{"title":"在紫云英田调查发光点","footnote":null},{"title":"在八原森林调查发光点","footnote":null},{"title":"在多轨家调查发光点","footnote":null},{"title":"回到紫云英田，和多轨对话","footnote":null}],"evening":[{"title":"前往七森之路，和丙对话","footnote":null}],"night":[{"title":"前往烟花大会","footnote":null},{"title":"选项：谢谢您","footnote":null},{"title":"和猫咪老师对话，选择：不用了","footnote":null},{"title":"选项：鸟居附近","footnote":null},{"title":"睡觉","footnote":null}]}},{"date":"8月16日","events":{"day":[{"title":"找到北本，赠送黄瓜","footnote":null},{"title":"找到西村，赠送混合果汁","footnote":null},{"title":"找到笹田，赠送巧克力","footnote":null},{"title":"找到多轨，赠送七辻豆沙包","footnote":null},{"title":"找到田沼，赠送七辻羊羹","footnote":null},{"title":"在紫云英田找到一个小女孩，对话","footnote":null},{"title":"前往田沼家，和田沼对话","footnote":null}],"evening":[{"title":"前往七辻公园，和名取对话","footnote":null}],"night":[{"title":"睡觉","footnote":null}]}},{"date":"8月17日","events":{"day":[{"title":"找到北本，赠送黄瓜","footnote":null},{"title":"找到西村，赠送混合果汁","footnote":null},{"title":"找到笹田，赠送巧克力","footnote":null},{"title":"找到多轨，赠送七辻豆沙包","footnote":null},{"title":"找到田沼，赠送七辻羊羹","footnote":null},{"title":"前往七辻屋，购买6个羊羹","footnote":null},{"title":"前往河滩，找名取对话","footnote":null}],"evening":[],"night":[{"title":"睡觉","footnote":null}]}},{"date":"8月18日","events":{"day":[{"title":"前往跳蚤市场","footnote":null},{"title":"选项：看店铺","footnote":null},{"title":"和同学对话，选择 不用了","footnote":null}],"evening":[],"night":[{"title":"睡觉","footnote":null}]}},{"date":"8月19日","events":{"day":[{"title":"找到多轨，赠送七辻豆沙包","footnote":null},{"title":"找到田沼，赠送七辻羊羹","footnote":null},{"title":"找到北本，赠送黄瓜","footnote":null},{"title":"找到西村，赠送混合果汁","footnote":null},{"title":"找到笹田，赠送巧克力","footnote":null},{"title":"来到大门前，和塔子阿姨对话","footnote":null},{"title":"前往河滩方向-堂宇前，调查发光点","footnote":null},{"title":"前往神社方向，调查桥上的发光点","footnote":null},{"title":"前往上学路，调查公交车站旁边的发光点","footnote":null},{"title":"回到大门前，和塔子阿姨对话","footnote":null},{"title":"回到夏目房间，触发对话","footnote":null},{"title":"休息到晚上","footnote":null}],"evening":[],"night":[{"title":"睡到明天","footnote":null}]}},{"date":"8月20日","events":{"day":[{"title":"找到笹田，赠送巧克力","footnote":null},{"title":"找到北本，赠送黄瓜","footnote":null},{"title":"找到多轨，赠送七辻豆沙包","footnote":null},{"title":"找到田沼，赠送七辻羊羹","footnote":null},{"title":"前往上学路，和西村对话","footnote":null}],"evening":[{"title":"找到西村，赠送混合果汁","footnote":null},{"title":"前往多轨家，和多轨对话","footnote":null},{"title":"回到房间，休息到晚上","footnote":null}],"night":[{"title":"睡到明天","footnote":null}]}},{"date":"8月21日","events":{"day":[{"title":"前往多轨家，调查发光点","footnote":null}],"evening":[{"title":"找到笹田，赠送巧克力","footnote":null},{"title":"找到北本，赠送黄瓜","footnote":null},{"title":"找到西村，赠送混合果汁","footnote":null},{"title":"找到多轨，赠送七辻豆沙包","footnote":null},{"title":"找到田沼，赠送七辻羊羹","footnote":null},{"title":"前往田沼家，和田沼对话","footnote":null},{"title":"前往可爱森林购买三种蛋糕各一个","footnote":null},{"title":"回到田沼家，和田沼对话","footnote":null}],"night":[{"title":"前往盂兰盆节","footnote":null},{"title":"选项：任意","footnote":null}]}},{"date":"8月22日","events":{"day":[{"title":"找到多轨，赠送七辻豆沙包","footnote":null},{"title":"找到笹田，赠送巧克力","footnote":null},{"title":"找到北本，赠送黄瓜","footnote":null},{"title":"找到西村，赠送混合果汁","footnote":null},{"title":"回到房间，休息到晚上","footnote":null}],"evening":[],"night":[{"title":"睡到明天","footnote":null}]}},{"date":"8月23日","events":{"day":[{"title":"找到多轨，赠送七辻豆沙包","footnote":null},{"title":"找到笹田，赠送巧克力","footnote":null},{"title":"找到北本，赠送黄瓜","footnote":null},{"title":"找到西村，赠送混合果汁","footnote":null},{"title":"回到房间，休息到晚上","footnote":null}],"evening":[],"night":[{"title":"睡到明天","footnote":null}]}},{"date":"8月24日","events":{"day":[{"title":"找到多轨，赠送七辻豆沙包","footnote":null},{"title":"找到笹田，赠送巧克力","footnote":null},{"title":"找到北本，赠送黄瓜","footnote":null},{"title":"前往上学路，和西村&北本对话","footnote":null}],"evening":[{"title":"回到房间，休息到晚上","footnote":null}],"night":[{"title":"睡到明天","footnote":null}]}},{"date":"8月25日","events":{"day":[{"title":"找到多轨，赠送七辻豆沙包","footnote":null},{"title":"回到房间，休息到晚上","footnote":null}],"evening":[],"night":[{"title":"睡到明天","footnote":null}]}},{"date":"8月26日","events":{"day":[{"title":"选项任意","footnote":null},{"title":"找到多轨，赠送七辻豆沙包","footnote":null},{"title":"和多轨对话","footnote":null},{"title":"前往河滩的桥下，触发和小女孩的对话","footnote":null}],"evening":[{"title":"回到房间，休息到晚上","footnote":null}],"night":[{"title":"参加夏日祭","footnote":null},{"title":"和猫咪老师对话，选项：去打招呼","footnote":null},{"title":"选项任意","footnote":null},{"title":"睡觉","footnote":null}]}},{"date":"8月27日","events":{"day":[{"title":"前往多轨家，和多轨对话","footnote":null},{"title":"回到房间，休息到晚上","footnote":null}],"evening":[],"night":[{"title":"睡到明天","footnote":null}]}},{"date":"8月28日","events":{"day":[{"title":"参加补作业大会","footnote":null}],"evening":[],"night":[{"title":"保存存档9","footnote":null},{"title":"回到标题画面","footnote":null},{"title":"查看100%收集的随想录","footnote":null},{"title":"如果有未收集的猫咪老师或者小游戏成就，也可以再开一个周目补全","footnote":null},{"title":"调查房间里的收音机，应该可以找到20首乐曲","footnote":null},{"title":"四周目到此结束","footnote":null}]}}]}];
+
+
+            var transformedData = [];
+
+            for (let index = 0; index < rawData.length; index++) {
+                const element = rawData[index];
+                transformedData.push(element.days);
+            }
+
+            for (let i = 0; i < transformedData.length; i++) {
+                const element = transformedData[i];
+                for (let j = 0; j < element.length; j++) {
+                    const day = element[j];
+
+                    day.events.day.forEach(e => e.completed = false);
+                    day.events.evening.forEach(e => e.completed = false);
+                    day.events.night.forEach(e => e.completed = false);
+
+                }
+            }
+            window.gameWeekData = transformedData;
+        })();
+
+    </script>
+
+    <script>
+        const { createApp, ref, computed, reactive, watch, onMounted } = Vue;
+
+        createApp({
+            setup() {
+                // 四个周目的数据
+                const weeksData = reactive(window.gameWeekData);
+
+                // 当前周目索引
+                const currentWeek = ref(0);
+                // 当前日期索引
+                const currentDayIndex = ref(0);
+                // 显示周目菜单
+                const showWeekMenu = ref(false);
+                // 标记位置是否已加载
+                const positionLoaded = ref(false);
+
+                // 计算当前周目的数据
+                const currentWeekData = computed(() => {
+                    return weeksData[currentWeek.value];
+                });
+
+                // 计算当前日期数据
+                const currentDay = computed(() => {
+                    return currentWeekData.value[currentDayIndex.value];
+                });
+
+                // 当前日期显示
+                const currentDate = computed(() => {
+                    return currentDay.value.date;
+                });
+
+                // 计算进度
+                const progress = computed(() => {
+                    let totalTasks = 0;
+                    let completedTasks = 0;
+
+                    currentWeekData.value.forEach(day => {
+                        ['day', 'evening', 'night'].forEach(time => {
+                            day.events[time].forEach(task => {
+                                totalTasks++;
+                                if (task.completed) {
+                                    completedTasks++;
+                                }
+                            });
+                        });
+                    });
+
+                    return totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+                });
+
+                // 切换周目菜单显示状态
+                const toggleWeekMenu = () => {
+                    showWeekMenu.value = !showWeekMenu.value;
+                };
+
+                // 选择周目
+                const selectWeek = (index) => {
+                    currentWeek.value = index;
+                    currentDayIndex.value = 0;
+                    showWeekMenu.value = false;
+                    loadWeekProgress();
+                    saveReadingPosition();
+                };
+
+                // 上一天
+                const prevDay = () => {
+                    if (currentDayIndex.value > 0) {
+                        currentDayIndex.value--;
+                        saveReadingPosition();
+                        window.setTimeout(()=>{
+                        window.scrollTo({
+							top: 0,
+							left: 0,
+							behavior: 'smooth' // 可选，平滑滚动
+						})},50);
+                    }
+                };
+
+                // 下一天
+                const nextDay = () => {
+                    if (currentDayIndex.value < currentWeekData.value.length - 1) {
+                        currentDayIndex.value++;
+                        saveReadingPosition();
+                        window.setTimeout(()=>{
+                        window.scrollTo({
+							top: 0,
+							left: 0,
+							behavior: 'smooth' // 可选，平滑滚动
+						})},50);
+
+                    }
+                };
+
+                // 生成任务ID（用于LocalStorage）
+                const getTaskId = (time, index) => {
+                    const date = currentDay.value.date.replace(/[月日]/g, '');
+                    return `week${currentWeek.value}-day${currentDayIndex.value}-${time}-${index}`;
+                };
+
+                // 更新任务状态
+                const updateTaskStatus = (time, index) => {
+                    const task = currentDay.value.events[time][index];
+                    const taskId = getTaskId(time, index);
+                    localStorage.setItem(taskId, task.completed);
+                };
+
+                // 加载周目进度
+                const loadWeekProgress = () => {
+                    currentWeekData.value.forEach((day, dayIndex) => {
+                        ['day', 'evening', 'night'].forEach(time => {
+                            day.events[time].forEach((task, taskIndex) => {
+                                const taskId = `week${currentWeek.value}-day${dayIndex}-${time}-${taskIndex}`;
+                                const completed = localStorage.getItem(taskId) === 'true';
+                                task.completed = completed;
+                            });
+                        });
+                    });
+                };
+
+                // 保存阅读位置
+                const saveReadingPosition = () => {
+                    const position = {
+                        week: currentWeek.value,
+                        day: currentDayIndex.value
+                    };
+                    localStorage.setItem('readingPosition', JSON.stringify(position));
+                };
+
+                // 加载阅读位置
+                const loadReadingPosition = () => {
+                    const savedPosition = localStorage.getItem('readingPosition');
+                    if (savedPosition) {
+                        try {
+                            const position = JSON.parse(savedPosition);
+                            currentWeek.value = position.week;
+                            currentDayIndex.value = position.day;
+                            positionLoaded.value = true;
+
+                            // 3秒后隐藏位置提示
+                            setTimeout(() => {
+                                positionLoaded.value = false;
+                            }, 3000);
+                        } catch (e) {
+                            console.error('加载阅读位置失败', e);
+                        }
+                    }
+                };
+
+                // 初始化
+                onMounted(() => {
+                    // 先加载阅读位置
+                    loadReadingPosition();
+
+                    // 然后加载任务状态
+                    loadWeekProgress();
+
+                    // 当点击页面其他区域时关闭周目菜单
+                    document.addEventListener('click', (e) => {
+                        if (!e.target.closest('.week-menu')) {
+                            showWeekMenu.value = false;
+                        }
+                    });
+                });
+
+                // 监视周目和日期变化，自动保存位置
+                watch([currentWeek, currentDayIndex], () => {
+                    saveReadingPosition();
+                });
+
+                return {
+                    weeksData,
+                    currentWeek,
+                    currentDayIndex,
+                    showWeekMenu,
+                    currentWeekData,
+                    currentDay,
+                    currentDate,
+                    progress,
+                    positionLoaded,
+                    toggleWeekMenu,
+                    selectWeek,
+                    prevDay,
+                    nextDay,
+                    getTaskId,
+                    updateTaskStatus
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>
