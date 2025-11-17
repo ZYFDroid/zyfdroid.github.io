@@ -10,8 +10,7 @@
 	<link rel="apple-touch-icon" href="favicon.png">
 	<link rel="manifest" href="manifest.json">
     <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, viewport-fit=cover">
-    
-    <title>卡片堆叠收纳游戏</title>
+    <title>卡片堆叠收纳</title>
     <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.js"></script>
     <style>
         * {
@@ -66,10 +65,10 @@
         }
 
         .score-display {
-            padding: 8px 16px;
             font-size: 18px;
             font-weight: bold;
-            color: #fff;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
         }
 
         .reset-button {
@@ -97,6 +96,7 @@
             justify-content: space-around;
             align-items: center;
             background: rgba(240, 240, 240, 0.5);
+            position: relative;
         }
 
         .storage-box {
@@ -135,6 +135,36 @@
             font-size: 24px;
             color: #333;
             font-weight: bold;
+        }
+
+        /* 得分动画 */
+        .score-popup {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            pointer-events: none;
+            animation: scoreFloat 1.5s ease-out forwards;
+            z-index: 200;
+        }
+
+        @keyframes scoreFloat {
+            0% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(0.5);
+            }
+            50% {
+                opacity: 1;
+                transform: translate(-50%, -70%) scale(1.2);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -100%) scale(1);
+            }
         }
 
         /* 叠放区样式 */
@@ -375,7 +405,6 @@
             
             .score-display {
                 font-size: 16px;
-                padding: 6px 12px;
             }
             
             .reset-button {
@@ -428,6 +457,14 @@
                  @click="handleStorageClick(index)">
                 <div class="storage-label">{{ box.color }}</div>
                 <div class="storage-count">{{ box.count }}/8</div>
+                
+                <!-- 得分动画 -->
+                <div v-for="popup in scorePopups.filter(p => p.boxIndex === index)" 
+                     :key="popup.id"
+                     class="score-popup"
+                     :class="`card-${popup.color}`">
+                    +{{ popup.score }}
+                </div>
             </div>
         </div>
 
@@ -477,7 +514,7 @@
 
         <!-- 作者信息 -->
         <div class="author-info">
-            作者：智谱清言 GLM-4.6
+            智谱清言 GLM-4.6
         </div>
 
         <!-- 重置确认模态框 -->
@@ -512,7 +549,9 @@
                     storageAbility: 5,
                     absorbAbility: 5,
                     maxAbility: 15,
-                    nextAbilityScore: 500
+                    nextAbilityScore: 500,
+                    scorePopups: [], // 得分弹窗数组
+                    popupIdCounter: 0
                 };
             },
             mounted() {
@@ -525,7 +564,8 @@
                     const shuffledColors = [...this.colors].sort(() => Math.random() - 0.5);
                     this.storageBoxes = shuffledColors.slice(0, 3).map(color => ({
                         color: color,
-                        count: 0
+                        count: 0,
+                        previousCount: 0 // 记录之前的数量，用于判断是否从0达成
                     }));
                 },
 
@@ -652,13 +692,16 @@
                             
                             // 检查是否完成
                             if (box.count >= 8) {
-                                this.score += 50;
-                                this.checkAbilityIncrease();
+                                this.calculateScore(boxIndex, box, false); // 手动移动，非吸纳
                                 box.count = 0;
                                 // 生成新的不重复颜色
                                 box.color = this.getUniqueColorForStorage(boxIndex);
                             }
-                            
+                            else{
+                              
+                                box.previousCount = box.count;
+                              
+                            }
                             this.clearSelection();
                             this.saveGame();
                         }
@@ -681,15 +724,68 @@
                     
                     // 检查是否完成
                     if (box.count >= 8) {
-                        this.score += 50;
-                        this.checkAbilityIncrease();
+                        this.calculateScore(boxIndex, box, true); // 吸纳得分，固定50分
                         box.count = 0;
                         // 生成新的不重复颜色
                         box.color = this.getUniqueColorForStorage(boxIndex);
                     }
-                    
+                    box.previousCount = box.count;
                     this.currentMode = null;
                     this.saveGame();
+                },
+
+                // 计算得分
+                calculateScore(boxIndex, box, isAbsorb = false) {
+                    let totalScore;
+                    
+                    if (isAbsorb) {
+                        // 吸纳道具得分固定为50
+                        totalScore = 50;
+                    } else {
+                        // 手动移动得分计算
+                        let baseScore = 50;
+                        totalScore = baseScore;
+                        
+                        // 超过8张每张加10分
+                        const overCount = box.count - 8;
+                        if (overCount > 0) {
+                            totalScore += overCount * 10;
+                        }
+                        
+                        // 检查是否从0直接达成（翻倍）
+                        const wasZero = box.previousCount === 0;
+                        if (wasZero) {
+                            totalScore *= 2;
+                        }
+                        
+                    }
+                    
+                    // 更新分数
+                    this.score += totalScore;
+                    this.checkAbilityIncrease();
+                    
+                    // 显示得分动画
+                    this.showScorePopup(boxIndex, box.color, totalScore);
+                    
+                    // 更新previousCount
+                    box.previousCount = 0;
+                },
+
+                // 显示得分动画
+                showScorePopup(boxIndex, color, score) {
+                    const popup = {
+                        id: this.popupIdCounter++,
+                        boxIndex: boxIndex,
+                        color: color,
+                        score: score
+                    };
+                    
+                    this.scorePopups.push(popup);
+                    
+                    // 1.5秒后移除
+                    setTimeout(() => {
+                        this.scorePopups = this.scorePopups.filter(p => p.id !== popup.id);
+                    }, 1500);
                 },
 
                 // 检查能力增加
@@ -824,6 +920,13 @@
                         this.storageAbility = gameState.storageAbility || 5;
                         this.absorbAbility = gameState.absorbAbility || 5;
                         this.nextAbilityScore = gameState.nextAbilityScore || 500;
+                        
+                        // 确保storageBoxes有previousCount属性
+                        this.storageBoxes.forEach(box => {
+                            if (box.previousCount === undefined) {
+                                box.previousCount = 0;
+                            }
+                        });
                     } else {
                         // 初始游戏：添加一些卡片
                         this.addRandomCards();
@@ -839,6 +942,8 @@
                     this.storageAbility = 5;
                     this.absorbAbility = 5;
                     this.nextAbilityScore = 500;
+                    this.scorePopups = [];
+                    this.popupIdCounter = 0;
                     this.clearSelection();
                     this.currentMode = null;
                     this.showResetConfirm = false;
