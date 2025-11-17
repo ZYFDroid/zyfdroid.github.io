@@ -1,0 +1,25 @@
+{
+    "name": "卡片堆叠收纳游戏",
+    "short_name": "堆叠收纳",
+    "description": "卡片堆叠收纳游戏",
+    "theme_color": "#FFFFFF",
+    "background_color": "#FFFFFF",
+    "display": "standalone",
+    "display_override": "standalone",
+    "orientation": "portrait",
+    "start_url": ".",
+    "icons": [
+        {
+            "src": "favicon.png",
+            "sizes": "256x256",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "icon_mask.png",
+            "sizes": "256x256",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ]
+}
