@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="apple-mobile-web-app-capable" content="yes">
-	<meta name="apple-mobile-web-app-status-bar-style" content="default">
-	<meta name="theme-color" content="#FFFFFF">
-	<link rel="icon" href="favicon.ico">
-	<link rel="bookmark" type="image/png" href="favicon.png">
-	<link rel="apple-touch-icon" href="favicon.png">
-	<link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="theme-color" content="#FFFFFF">
+    <link rel="icon" href="favicon.ico">
+    <link rel="bookmark" type="image/png" href="favicon.png">
+    <link rel="apple-touch-icon" href="favicon.png">
+    <link rel="manifest" href="manifest.json">
     <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, viewport-fit=cover">
     <title>卡片堆叠收纳</title>
     <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.js"></script>
@@ -22,26 +22,38 @@
             -moz-user-select: none;
             -ms-user-select: none;
         }
-
+        /* 修改body和html */
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             background: #ffffff;
             height: 100vh;
+            height: 100dvh;
             overflow: hidden;
             position: relative;
             display: flex;
             flex-direction: column;
         }
 
+        /* 修改整体布局 */
         #app {
             height: 100vh;
+            height: 100dvh; /* 添加动态视口高度支持 */
             display: flex;
             flex-direction: column;
+            overflow: hidden;
         }
 
-        /* 标题栏样式 */
+        /* 修改标题栏 */
         .header {
-            height: 50px;
+            height: 60px;
+            min-height: 60px;
+            flex-shrink: 0; /* 防止压缩 */
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             display: flex;
             justify-content: space-between;
@@ -88,9 +100,33 @@
             transform: translateY(-1px);
         }
 
-        /* 收纳区样式 */
+        /* 添加问号按钮样式 */
+        .help-button {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .help-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.1);
+        }
+
+        /* 修改收纳区 */
         .storage-area {
-            height: 20vh;
+            flex: 0 0 auto; /* 不伸缩，根据内容确定高度 */
+            min-height: 120px; /* 最小高度 */
+            max-height: 25vh; /* 最大高度限制 */
             padding: 10px;
             display: flex;
             justify-content: space-around;
@@ -98,6 +134,7 @@
             background: rgba(240, 240, 240, 0.5);
             position: relative;
         }
+
 
         .storage-box {
             width: 28%;
@@ -167,14 +204,16 @@
             }
         }
 
-        /* 叠放区样式 */
+        /* 修改叠放区 */
         .stack-area {
-            height: 60vh;
+            flex: 1 1 auto; /* 主要伸缩区域，占据剩余空间 */
+            min-height: 200px; /* 最小高度 */
             padding: 10px;
             display: flex;
             justify-content: space-around;
             align-items: flex-end;
             background: rgba(200, 200, 200, 0.3);
+            overflow: hidden; /* 防止内容溢出 */
         }
 
         .stack-position {
@@ -264,9 +303,11 @@
         .storage-purple { border-color: #9C27B0; }
         .storage-gray { border-color: #757575; }
 
-        /* 按钮区域样式 */
+        /* 修改按钮区域 */
         .button-area {
-            height: 10vh;
+            flex: 0 0 auto; /* 不伸缩，固定高度 */
+            height: 70px;
+            min-height: 70px;
             display: flex;
             justify-content: space-around;
             align-items: center;
@@ -274,6 +315,7 @@
             padding: 10px;
             border-top: 1px solid #e0e0e0;
         }
+
 
         .game-button {
             padding: 12px 24px;
@@ -324,10 +366,8 @@
 
         /* 作者信息 */
         .author-info {
-            position: absolute;
-            bottom: 5px;
-            left: 50%;
-            transform: translateX(-50%);
+            text-align: center;
+            background-color: #f5f5f5;
             color: #999;
             font-size: 12px;
             text-align: center;
@@ -352,9 +392,11 @@
             background: white;
             padding: 30px;
             border-radius: 8px;
-            text-align: center;
+            text-align: left;
             box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
             max-width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
         }
 
         .modal-buttons {
@@ -392,11 +434,73 @@
             background: #d0d0d0;
         }
 
+        /* 帮助模态框样式 */
+        .help-content h1 {
+            color: #667eea;
+            font-size: 24px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .help-content h2 {
+            color: #764ba2;
+            font-size: 20px;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+
+        .help-content h3 {
+            color: #555;
+            font-size: 18px;
+            margin-top: 15px;
+            margin-bottom: 8px;
+        }
+
+        .help-content p {
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+
+        .help-content ul {
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+
+        .help-content li {
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+
+        .help-content strong {
+            color: #333;
+        }
+
+        .help-content .author {
+            text-align: right;
+            margin-top: 20px;
+            font-style: italic;
+            color: #666;
+        }
+
         /* 移动端适配 */
         @media (max-width: 768px) {
             .header {
-                height: 45px;
+                height: 50px;
+                min-height: 50px;
                 padding: 0 15px;
+            }
+            
+            .storage-area {
+                min-height: 100px;
+                padding: 8px;
+            }
+            
+            .button-area {
+                height: 60px;
+                min-height: 60px;
+                padding: 8px;
             }
             
             .game-title {
@@ -429,6 +533,47 @@
                 height: 35px;
                 font-size: 11px;
             }
+            
+            .help-button {
+                width: 32px;
+                height: 32px;
+                font-size: 18px;
+            }
+        }
+        
+        /* 超小屏幕适配 */
+        @media (max-width: 480px) {
+            .header {
+                height: 45px;
+                min-height: 45px;
+                padding: 0 10px;
+            }
+            
+            .storage-area {
+                min-height: 90px;
+                padding: 5px;
+            }
+            
+            .button-area {
+                height: 55px;
+                min-height: 55px;
+                padding: 5px;
+            }
+            
+            .game-title {
+                font-size: 18px;
+            }
+            
+            .game-button {
+                font-size: 11px;
+                padding: 8px 15px;
+            }
+            
+            .help-button {
+                width: 28px;
+                height: 28px;
+                font-size: 16px;
+            }
         }
     </style>
 </head>
@@ -438,9 +583,11 @@
         <div class="header">
             <div class="game-title">卡片堆叠收纳</div>
             <div class="header-right">
+               
                 <div class="score-display">
                     得分: {{ score }}
-                </div>
+                </div> 
+                <div class="help-button" @click="showHelp = true">?</div>
                 <button class="reset-button" @click="showResetConfirm = true">重新开始</button>
             </div>
         </div>
@@ -498,7 +645,7 @@
                     :class="{ active: currentMode === 'storage' }"
                     :disabled="storageAbility <= 0"
                     @click="setMode('storage')">
-                收纳 ({{ storageAbility }})
+                回收 ({{ storageAbility }})
             </button>
             <button class="game-button highlight" 
                     @click="addRandomCards">
@@ -512,11 +659,6 @@
             </button>
         </div>
 
-        <!-- 作者信息 -->
-        <div class="author-info">
-            智谱清言 GLM-4.6
-        </div>
-
         <!-- 重置确认模态框 -->
         <div v-if="showResetConfirm" class="modal" @click.self="showResetConfirm = false">
             <div class="modal-content">
@@ -526,6 +668,118 @@
                     <button class="modal-button modal-confirm" @click="resetGame">确认重置</button>
                     <button class="modal-button modal-cancel" @click="showResetConfirm = false">取消</button>
                 </div>
+            </div>
+        </div>
+
+        <!-- 帮助模态框 -->
+        <div v-if="showHelp" class="modal" @click.self="showHelp = false">
+            <div class="modal-content help-content">
+                <h1>卡片堆叠收纳 - 游戏说明</h1>
+                
+                <h2>🎮 基础玩法</h2>
+                <h3>游戏目标</h3>
+                <p>通过策略性地移动和收纳卡片，获得尽可能高的分数。</p>
+                
+                <h3>游戏界面</h3>
+                <ul>
+                    <li><strong>顶部区域</strong>：3个收纳框，每个框需要收集特定颜色的卡片</li>
+                    <li><strong>中间区域</strong>：7个堆叠位置，用于存放和整理卡片</li>
+                    <li><strong>底部区域</strong>：操作按钮区域</li>
+                </ul>
+                
+                <h3>操作方式</h3>
+                <ol>
+                    <li><strong>选择卡片</strong>：点击任意堆叠，自动选中顶部所有同色卡片</li>
+                    <li><strong>移动卡片</strong>：选中卡片后，点击另一个堆叠进行移动</li>
+                    <li><strong>收纳卡片</strong>：选中卡片后，点击对应颜色的收纳框</li>
+                    <li><strong>移动规则</strong>：只能移动到空堆叠或顶部颜色相同的堆叠</li>
+                </ol>
+                
+                <h2>🎯 按钮说明</h2>
+                <h3>回收按钮</h3>
+                <ul>
+                    <li><strong>功能</strong>：清空指定堆叠的所有卡片</li>
+                    <li><strong>使用方法</strong>：点击回收按钮，然后点击需要回收的列。</li>
+                </ul>
+                
+                <h3>添加卡片按钮</h3>
+                <ul>
+                    <li><strong>功能</strong>：为每个堆叠添加3张随机卡片</li>
+                    <li><strong>使用限制</strong>：无限制，可随时使用</li>
+                    <li><strong>特殊机制</strong>：
+                        <ul>
+                            <li>20%概率生成连续同色卡片（2-3张）</li>
+                            <li>50%概率生成收纳框所需颜色</li>
+                            <li>每个堆叠上限28张卡片</li>
+                        </ul>
+                    </li>
+                </ul>
+                
+                <h3>吸纳按钮</h3>
+                <ul>
+                    <li><strong>功能</strong>：一键吸纳所有堆叠中指定颜色的卡片到选中的收纳框</li>
+                    <li><strong>使用方法</strong>：点击吸纳按钮，然后点击一个收纳筐</li>
+                </ul>
+                
+                <h2>💰 得分说明</h2>
+                <h3>基础得分</h3>
+                <ul>
+                    <li><strong>完成收纳</strong>：每个收纳框达到8张卡片获得基础50分</li>
+                </ul>
+                
+                <h3>手动移动奖励</h3>
+                <ul>
+                    <li><strong>翻倍奖励</strong>：从0直接完成收纳框，得分翻倍（100分）</li>
+                    <li><strong>超额奖励</strong>：超过8张卡片，每多1张额外加10分</li>
+                    <li><strong>示例</strong>：
+                        <ul>
+                            <li>从0到8张：100分</li>
+                            <li>从3到10张：50 + (10-8)×10 = 70分</li>
+                            <li>从5到12张：50 + (12-8)×10 = 90分</li>
+                        </ul>
+                    </li>
+                </ul>
+                
+                <h3>吸纳道具得分</h3>
+                <ul>
+                    <li><strong>固定得分</strong>：使用吸纳道具完成收纳，固定获得50分</li>
+                    <li><strong>无额外奖励</strong>：不享受翻倍和超额奖励</li>
+                </ul>
+                
+                <h2>🎁 道具说明</h2>
+                <h3>道具获取</h3>
+                <ul>
+                    <li><strong>初始数量</strong>：收纳和吸纳道具各5次</li>
+                    <li><strong>增加机制</strong>：每获得500分，两种道具各增加5次</li>
+                    <li><strong>上限限制</strong>：每种道具最多15次</li>
+                </ul>
+                
+                <h3>道具策略</h3>
+                <ul>
+                    <li><strong>回收道具</strong>：适合紧急情况，快速清理混乱堆叠</li>
+                    <li><strong>吸纳道具</strong>：高效完成收集，但得分较低</li>
+                    <li><strong>权衡选择</strong>：手动操作得分更高，但需要更多策略思考</li>
+                </ul>
+                
+                <h2>🏆 游戏技巧</h2>
+                <h3>高分策略</h3>
+                <ol>
+                    <li><strong>积累卡片</strong>：尽量在收纳框中积累更多卡片再完成</li>
+                    <li><strong>从零开始</strong>：清空收纳框后重新收集可获得翻倍奖励</li>
+                    <li><strong>合理布局</strong>：将相同颜色的卡片集中堆叠</li>
+                    <li><strong>道具使用</strong>：在关键时刻使用道具，避免浪费</li>
+                </ol>
+                
+                <h3>注意事项</h3>
+                <ul>
+                    <li>每个堆叠最多容纳28张卡片</li>
+                    <li>超过限制的移动会失败</li>
+                    <li>游戏进度自动保存，可随时继续</li>
+                    <li>合理规划收纳框颜色，优先收集堆叠中数量多的颜色</li>
+                </ul>
+                
+                <p>祝您游戏愉快，挑战最高分！ 🎉</p>
+                <p class="author">游戏作者：智谱清言 GLM-4.6</p>
             </div>
         </div>
     </div>
@@ -546,6 +800,7 @@
                     targetingStack: null,
                     targetingStorage: null,
                     showResetConfirm: false,
+                    showHelp: false, // 添加帮助模态框控制变量
                     storageAbility: 5,
                     absorbAbility: 5,
                     maxAbility: 15,
