@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberCinema v1 - 在线同步观影</title>
+    <!-- 引入 MQTT.js -->
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #1a1a1a;
+            --panel-bg: #252525;
+            --accent-color: #00e676;
+            --text-color: #e0e0e0;
+            --border-color: #444;
+            --chat-width: 220px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg-color); color: var(--text-color); height: 100vh; overflow: hidden; }
+
+        /* 通用样式 */
+        .hidden { display: none !important; }
+        .btn {
+            background: var(--accent-color); border: none; padding: 8px 16px; 
+            color: #000; font-weight: bold; cursor: pointer; border-radius: 4px;
+            transition: opacity 0.2s;
+        }
+        .btn:hover { opacity: 0.9; }
+        .btn:disabled { background: #555; cursor: not-allowed; }
+        input, select {
+            background: #333; border: 1px solid var(--border-color); 
+            color: white; padding: 8px; border-radius: 4px; width: 100%; margin-bottom: 10px;
+        }
+
+        /* 登录页 */
+        #login-screen {
+            display: flex; justify-content: center; align-items: center; height: 100vh;
+            background: radial-gradient(circle, #333 0%, #000 100%);
+        }
+        .login-box {
+            background: var(--panel-bg); padding: 30px; border-radius: 8px; width: 400px;
+            box-shadow: 0 0 20px rgba(0,230,118,0.2);
+        }
+        .login-box h2 { text-align: center; margin-bottom: 20px; color: var(--accent-color); }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-size: 0.9em; color: #aaa; }
+        .row { display: flex; gap: 10px; }
+
+        /* 主界面 (视频区 + 聊天区) */
+        #app-screen { display: flex; width: 100vw; height: 100vh; }
+        
+        /* 视频区域 */
+        #video-section {
+            flex: 1; position: relative; background: #000;
+            display: flex; justify-content: center; align-items: center;
+        }
+        video { width: 100%; height: 100%; object-fit: contain; }
+        
+        /* 自定义控件 */
+        .custom-controls {
+            position: absolute; bottom: 0; left: 0; right: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+            padding: 20px; display: flex; flex-direction: column; gap: 10px;
+            opacity: 0; transition: opacity 0.3s;
+        }
+        #video-wrapper:hover .custom-controls { opacity: 1; }
+        
+        .progress-bar-container { width: 100%; height: 6px; background: #555; border-radius: 3px; cursor: pointer; position: relative; }
+        .progress-bar-fill { height: 100%; background: var(--accent-color); width: 0%; border-radius: 3px; position: relative; }
+        .progress-bar-handle {
+            width: 12px; height: 12px; background: #fff; border-radius: 50%;
+            position: absolute; right: -6px; top: -3px; display: none;
+        }
+        .progress-bar-container:hover .progress-bar-handle { display: block; }
+
+        .control-row { display: flex; align-items: center; justify-content: space-between; }
+        .control-btn { background: none; border: none; color: #fff; cursor: pointer; font-size: 1.2rem; margin-right: 15px; }
+        .control-btn:hover { color: var(--accent-color); }
+        .time-display { font-size: 0.8rem; font-variant-numeric: tabular-nums; margin-right: auto; }
+
+        /* 聊天侧边栏 */
+        #chat-sidebar {
+            width: var(--chat-width); background: var(--panel-bg); border-left: 1px solid var(--border-color);
+            display: flex; flex-direction: column;
+        }
+        
+        /* 用户列表 (上半部分) */
+        #user-list-panel {
+            height: 35%; border-bottom: 1px solid var(--border-color);
+            display: flex; flex-direction: column;
+        }
+        .panel-header { padding: 10px; background: #333; font-weight: bold; font-size: 0.9em; }
+        #user-list { flex: 1; overflow-y: auto; padding: 10px; font-size: 0.85em; }
+        .user-item { display: flex; justify-content: space-between; padding: 4px 0; color: #ccc; }
+        .user-item .host-badge { color: var(--accent-color); }
+
+        /* 聊天区域 (下半部分) */
+        #chat-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+        .chat-toggle-btn {
+            position: absolute; top: 0; right: 0; background: #333; border: none; 
+            color: #fff; padding: 5px 8px; cursor: pointer; z-index: 10; font-size: 0.8em;
+        }
+        #chat-messages {
+            flex: 1; overflow-y: auto; padding: 10px; font-size: 0.85em; display: flex; flex-direction: column; gap: 8px;
+        }
+        .chat-msg { word-wrap: break-word; line-height: 1.4; }
+        .chat-meta { font-size: 0.75em; color: #888; margin-bottom: 2px; }
+        .chat-text { color: #fff; }
+        .system-msg { color: var(--accent-color); font-style: italic; font-size: 0.8em; text-align: center; }
+        
+        #chat-input-area { padding: 10px; background: #333; display: flex; gap: 5px; }
+        #chat-input-area input { margin-bottom: 0; }
+        
+        /* 状态指示 */
+        #status-bar {
+            position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.6);
+            padding: 5px 10px; border-radius: 4px; font-size: 0.8em; pointer-events: none;
+            z-index: 5;
+        }
+        .role-host { color: var(--accent-color); font-weight: bold; }
+
+        /* Toast 提示 */
+        #toast {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            background: #333; color: #fff; padding: 10px 20px; border-radius: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5); opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 1000;
+        }
+        #toast.show { opacity: 1; }
+    </style>
+</head>
+<body>
+
+    <!-- 登录界面 -->
+    <div id="login-screen">
+        <div class="login-box">
+            <h2>CyberCinema v1</h2>
+            
+            <div class="form-group">
+                <label>MQTT 服务器地址 (WebSocket)</label>
+                <input type="text" id="mqtt-host" placeholder="ws://broker.example.com:8083/mqtt" value="">
+            </div>
+            
+            <div class="row">
+                <div class="form-group" style="flex:1">
+                    <label>用户名</label>
+                    <input type="text" id="mqtt-user">
+                </div>
+                <div class="form-group" style="flex:1">
+                    <label>密码</label>
+                    <input type="password" id="mqtt-pass">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>房间 ID (无横杠GUID)</label>
+                <div class="row">
+                    <input type="text" id="room-id" placeholder="输入或生成">
+                    <button class="btn" onclick="generateRoomId()">生成</button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>用户昵称 (1-18字符)</label>
+                <input type="text" id="user-nick" maxlength="18" placeholder="你的昵称">
+            </div>
+
+            <div class="form-group">
+                <label>本地视频文件</label>
+                <input type="file" id="video-file" accept="video/*">
+            </div>
+
+            <div class="row" style="margin-top: 20px;">
+                <button class="btn" style="flex:1; background:#555" onclick="shareConfig()">分享配置</button>
+                <button class="btn" style="flex:1; background:#555" onclick="receiveConfig()">接收分享</button>
+            </div>
+            <div class="row" style="margin-top: 10px;">
+                <button class="btn" style="flex:1" onclick="enterRoom()">进入房间</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 播放界面 -->
+    <div id="app-screen" class="hidden">
+        <div id="video-section">
+            <div id="video-wrapper" style="width:100%; height:100%; position:relative;">
+                <video id="main-video"></video>
+                
+                <div class="custom-controls">
+                    <div class="progress-bar-container" id="progress-bar">
+                        <div class="progress-bar-fill" id="progress-fill"></div>
+                        <div class="progress-bar-handle"></div>
+                    </div>
+                    <div class="control-row">
+                        <div style="display:flex; align-items:center;">
+                            <button class="control-btn" id="btn-play-pause">▶</button>
+                            <button class="control-btn" id="btn-mute">🔊</button>
+                            <input type="range" id="volume-slider" min="0" max="1" step="0.1" value="1" style="width:80px; margin:0 10px;">
+                            <span class="time-display"><span id="curr-time">00:00</span> / <span id="total-time">00:00</span></span>
+                        </div>
+                        <div id="status-display" style="font-size: 0.8em; color: #aaa;">未连接</div>
+                    </div>
+                </div>
+            </div>
+            <div id="status-bar">
+                身份: <span id="role-badge">--</span> | 房间: <span id="room-display">--</span>
+            </div>
+        </div>
+
+        <div id="chat-sidebar">
+            <div id="user-list-panel">
+                <div class="panel-header">在线用户</div>
+                <div id="user-list">
+                    <!-- 用户列表项 -->
+                </div>
+            </div>
+            <div id="chat-panel">
+                <button class="chat-toggle-btn" onclick="toggleChat()">▼</button>
+                <div id="chat-messages">
+                    <div class="system-msg">欢迎进入 CyberCinema</div>
+                </div>
+                <div id="chat-input-area">
+                    <input type="text" id="chat-input" placeholder="输入消息..." maxlength="200">
+                    <button class="btn" style="padding: 5px 10px;" onclick="sendChat()">发送</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast">提示信息</div>
+
+    <script>
+        // --- 全局变量 ---
+        const CONFIG = {
+            msgTypes: {
+                CHAT: 'chat',
+                ENTER: 'enter',
+                ENTER_RESP: 'enter_resp',
+                BROADCAST: 'broadcast',
+                ACTION: 'action',
+                NEGOTIATE: 'negotiate',
+                NEGOTIATE_RESP: 'neg_resp'
+            }
+        };
+
+        let state = {
+            clientId: '',
+            username: '',
+            roomTopic: '',
+            isHost: false,
+            users: {}, // { id: { nick, lastSeen, progress, state } }
+            videoFile: null,
+            videoBlobUrl: null,
+            lastHeartbeat: 0, // 收到广播的时间戳
+            negotiateTimeout: null,
+            justJoined: true // 防止刚进入时立即触发房主离线判定
+        };
+
+        let mqttClient = null;
+        let broadcastInterval = null;
+        let video = document.getElementById('main-video');
+
+        // --- 初始化 ---
+        window.onload = function() {
+            // 初始化/获取客户端ID
+            let storedId = localStorage.getItem('cyber_cinema_uid');
+            if (!storedId) {
+                storedId = generateGUID();
+                localStorage.setItem('cyber_cinema_uid', storedId);
+            }
+            state.clientId = storedId;
+
+            // 自动填充上次的信息
+            document.getElementById('mqtt-host').value = localStorage.getItem('last_host') || '';
+            document.getElementById('mqtt-user').value = localStorage.getItem('last_user') || '';
+            document.getElementById('room-id').value = localStorage.getItem('last_room') || '';
+            document.getElementById('user-nick').value = localStorage.getItem('last_nick') || '';
+
+            // 绑定视频控件事件
+            setupVideoControls();
+        };
+
+        // --- 工具函数 ---
+        function generateGUID() {
+            return 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'.replace(/[x]/g, function(c) {
+                var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
+
+        function generateRoomId() {
+            document.getElementById('room-id').value = generateGUID();
+        }
+
+        // Base64 编码 (支持中文)
+        function utf8_to_b64(str) {
+            return window.btoa(unescape(encodeURIComponent(str)));
+        }
+        function b64_to_utf8(str) {
+            return decodeURIComponent(escape(window.atob(str)));
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 3000);
+        }
+
+        function formatTime(seconds) {
+            if(isNaN(seconds)) return "00:00";
+            const m = Math.floor(seconds / 60);
+            const s = Math.floor(seconds % 60);
+            return `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+        }
+
+        // --- 登录与分享逻辑 ---
+        function shareConfig() {
+            const config = {
+                h: document.getElementById('mqtt-host').value,
+                u: document.getElementById('mqtt-user').value,
+                p: document.getElementById('mqtt-pass').value,
+                r: document.getElementById('room-id').value
+            };
+            const jsonStr = JSON.stringify(config);
+            const encoded = utf8_to_b64(jsonStr);
+            
+            // 兼容性复制
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(encoded).then(() => {
+                    showToast('配置已复制到剪贴板');
+                }).catch(err => {
+                    fallbackCopy(encoded);
+                });
+            } else {
+                fallbackCopy(encoded);
+            }
+        }
+
+        function fallbackCopy(text) {
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                const successful = document.execCommand('copy');
+                if(successful) showToast('配置已复制 (兼容模式)');
+            } catch (err) {
+                showToast('复制失败，请手动复制');
+            }
+            document.body.removeChild(textArea);
+        }
+
+        function receiveConfig() {
+            navigator.clipboard.readText().then(text => {
+                try {
+                    const jsonStr = b64_to_utf8(text);
+                    const config = JSON.parse(jsonStr);
+                    if(config.h) document.getElementById('mqtt-host').value = config.h;
+                    if(config.u) document.getElementById('mqtt-user').value = config.u;
+                    if(config.p) document.getElementById('mqtt-pass').value = config.p;
+                    if(config.r) document.getElementById('room-id').value = config.r;
+                    showToast('配置已导入');
+                } catch (e) {
+                    showToast('剪贴板内容无效');
+                }
+            }).catch(() => {
+                showToast('无法读取剪贴板');
+            });
+        }
+
+        function enterRoom() {
+            const host = document.getElementById('mqtt-host').value;
+            const user = document.getElementById('mqtt-user').value;
+            const pass = document.getElementById('mqtt-pass').value;
+            const roomId = document.getElementById('room-id').value;
+            const nick = document.getElementById('user-nick').value;
+            const fileInput = document.getElementById('video-file');
+
+            if (!host || !roomId || !nick || fileInput.files.length === 0) {
+                showToast('请填写所有字段并选择视频');
+                return;
+            }
+
+            // 保存设置
+            localStorage.setItem('last_host', host);
+            localStorage.setItem('last_user', user);
+            localStorage.setItem('last_room', roomId);
+            localStorage.setItem('last_nick', nick);
+
+            state.username = nick;
+            state.roomTopic = `CyberCinema_v1/${roomId}`;
+            state.videoFile = fileInput.files[0];
+            state.videoBlobUrl = URL.createObjectURL(state.videoFile);
+            state.justJoined = true; // 标记刚加入
+            state.lastHeartbeat = Date.now(); // 初始化心跳时间，防止刚进入就判定房主离线
+
+            // 切换界面
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('app-screen').classList.remove('hidden');
+            document.getElementById('room-display').innerText = roomId;
+
+            // 加载视频
+            video.src = state.videoBlobUrl;
+            document.getElementById('total-time').innerText = formatTime(video.duration || 0);
+
+            // 连接 MQTT
+            connectMqtt(host, user, pass);
+        }
+
+        // --- MQTT 逻辑 ---
+        function connectMqtt(host, user, pass) {
+            updateStatus('连接中...');
+            const options = {
+                clientId: state.clientId,
+                username: user,
+                password: pass,
+                clean: true,
+                reconnectPeriod: 5000
+            };
+
+            mqttClient = mqtt.connect(host, options);
+
+            mqttClient.on('connect', () => {
+                updateStatus('已连接');
+                // 订阅房间话题
+                mqttClient.subscribe(state.roomTopic, { qos: 2 }, (err) => {
+                    if (!err) {
+                        // 发送进入消息
+                        publishMessage(CONFIG.msgTypes.ENTER, { nick: state.username });
+                        startHostCheck();
+                    }
+                });
+            });
+
+            mqttClient.on('message', (topic, message) => {
+                if (topic !== state.roomTopic) return;
+                try {
+                    const payload = JSON.parse(message.toString());
+                    handleMessage(payload);
+                } catch (e) {
+                    console.error('消息解析错误', e);
+                }
+            });
+
+            mqttClient.on('error', (err) => {
+                updateStatus('连接错误');
+                console.error(err);
+            });
+        }
+
+        function publishMessage(type, data) {
+            if (!mqttClient || !mqttClient.connected) return;
+            const payload = {
+                type: type,
+                id: state.clientId,
+                ts: Date.now(),
+                ...data
+            };
+            // 根据类型决定 QoS
+            let qos = 0;
+            if ([CONFIG.msgTypes.CHAT, CONFIG.msgTypes.ENTER, CONFIG.msgTypes.ENTER_RESP, CONFIG.msgTypes.ACTION, CONFIG.msgTypes.NEGOTIATE, CONFIG.msgTypes.NEGOTIATE_RESP].includes(type)) {
+                qos = 2;
+            }
+            
+            mqttClient.publish(state.roomTopic, JSON.stringify(payload), { qos });
+        }
+
+        // --- 消息处理核心 ---
+        function handleMessage(msg) {
+            const { type, id, ts, nick, time, state: playState, progress } = msg;
+
+            // 忽略自己的消息
+            if (id === state.clientId) return;
+
+            switch (type) {
+                case CONFIG.msgTypes.CHAT:
+                    const chatContent = b64_to_utf8(msg.content);
+                    addChatMessage(nick, chatContent, false);
+                    break;
+
+                case CONFIG.msgTypes.ENTER:
+                    addSystemMessage(`${nick} 加入了房间`);
+                    // 回应进入房间响应消息 (包含当前状态)
+                    publishMessage(CONFIG.msgTypes.ENTER_RESP, {
+                        nick: state.username,
+                        progress: video.currentTime,
+                        state: video.paused ? 'paused' : 'playing'
+                    });
+                    // 如果我是房主，更新用户列表
+                    if (state.isHost) updateUser(id, nick, Date.now());
+                    break;
+
+                case CONFIG.msgTypes.ENTER_RESP:
+                    // 如果不是房主，收到此消息说明有人在线，我不能成为房主
+                    // 调整进度 (同步)
+                    if (!state.isHost && Math.abs(video.currentTime - progress) > 2) {
+                         video.currentTime = progress;
+                    }
+                    if (!state.isHost && playState === 'playing' && video.paused) {
+                        video.play();
+                    } else if (!state.isHost && playState === 'paused' && !video.paused) {
+                        video.pause();
+                    }
+                    updateUser(id, nick, Date.now());
+                    break;
+
+                case CONFIG.msgTypes.BROADCAST:
+                    // 房主心跳
+                    state.lastHeartbeat = Date.now();
+                    if (state.isHost) {
+                        // 如果我是房主，但收到了广播，说明有比我更早的房主存在，我降级为观众
+                        becomeFollower();
+                    }
+                    
+                    // 更新房主信息
+                    updateUser(id, nick, Date.now());
+                    
+                    // 同步检查 (5秒偏差)
+                    if (Math.abs(video.currentTime - progress) > 5) {
+                        video.currentTime = progress;
+                        // 发送协商回复 (通知房主我同步了)
+                        publishMessage(CONFIG.msgTypes.NEGOTIATE_RESP, { 
+                            nick: state.username, 
+                            progress: video.currentTime 
+                        });
+                    }
+                    // 同步状态
+                    if (playState === 'playing' && video.paused) video.play();
+                    if (playState === 'paused' && !video.paused) video.pause();
+                    break;
+
+                case CONFIG.msgTypes.NEGOTIATE_RESP:
+                    // 收到协商回复，更新用户列表
+                    updateUser(id, nick, Date.now());
+                    // 如果我正在发起选举（或等待选举），收集此信息
+                    // 简化逻辑：每次收到回复都更新用户映射
+                    break;
+
+                case CONFIG.msgTypes.ACTION:
+                    // 用户动作 (同步) - 所有人都可以发送，所有人都要执行
+                    if (msg.action === 'play') video.play();
+                    if (msg.action === 'pause') video.pause();
+                    if (msg.action === 'seek') video.currentTime = time;
+                    break;
+            }
+        }
+
+        // --- 房主/房客 状态机 ---
+        
+        // 启动检查，决定是否成为房主
+        function startHostCheck() {
+            let checkCount = 0;
+            const maxChecks = 3; // 等待 3 * 2 = 6秒 看是否有心跳或响应
+            
+            const checkTimer = setInterval(() => {
+                checkCount++;
+                // 如果这段时间没收到任何广播，也没有收到 enter_resp，则认为自己是房主
+                // 这里简化判断：如果没有收到非自己的 enter_resp，也没有收到 broadcast
+                // 由于我们刚加入，通常会有旧房主的 broadcast 或者 别人的 enter_resp
+                // 如果我们只收到了自己的消息（被过滤了），那么 users 是空的
+                
+                // 判断依据：users 里面是否有别人
+                const otherUsers = Object.keys(state.users).filter(k => k !== state.clientId);
+                
+                if (otherUsers.length === 0 && checkCount >= maxChecks) {
+                    becomeHost();
+                    clearInterval(checkTimer);
+                } else if (otherUsers.length > 0) {
+                    // 发现了其他人，我不是房主
+                    becomeFollower();
+                    clearInterval(checkTimer);
+                }
+            }, 2000);
+        }
+
+        function becomeHost() {
+            if (state.isHost) return;
+            state.isHost = true;
+            updateStatus('你是房主 (正在广播进度)');
+            
+            // 更新UI身份标签
+            const badge = document.getElementById('role-badge');
+            badge.innerText = '房主';
+            badge.className = 'role-host';
+            
+            startBroadcast();
+            addSystemMessage('你已成为房主');
+        }
+
+        function becomeFollower() {
+            if (!state.isHost) return;
+            state.isHost = false;
+            updateStatus('观众模式');
+            
+            // 更新UI身份标签
+            const badge = document.getElementById('role-badge');
+            badge.innerText = '观众';
+            badge.className = '';
+            
+            stopBroadcast();
+        }
+
+        // 房主广播心跳
+        function startBroadcast() {
+            if (broadcastInterval) clearInterval(broadcastInterval);
+            
+            const sendBroadcast = () => {
+                if (!state.isHost || !mqttClient || !mqttClient.connected) return;
+                
+                // 随机 45-60秒
+                const nextDelay = Math.random() * 15000 + 45000;
+                
+                publishMessage(CONFIG.msgTypes.BROADCAST, {
+                    nick: state.username,
+                    progress: video.currentTime,
+                    state: video.paused ? 'paused' : 'playing'
+                });
+
+                broadcastInterval = setTimeout(sendBroadcast, nextDelay);
+            };
+            
+            // 立即发送一次
+            sendBroadcast();
+        }
+
+        function stopBroadcast() {
+            if (broadcastInterval) clearTimeout(broadcastInterval);
+            broadcastInterval = null;
+        }
+
+        // 房主丢失检测 (3-4分钟没收到广播)
+        // 实际上在 handleMesssage BROADCAST 里会重置 lastHeartbeat
+        setInterval(() => {
+            if (state.isHost) return; // 房主不需要检测
+
+            // 如果刚加入，跳过检测，防止误判
+            if (state.justJoined) {
+                state.justJoined = false;
+                return; 
+            }
+
+            const timeSinceHeartbeat = Date.now() - state.lastHeartbeat;
+            // 如果超过 4 分钟 (240000 ms)
+            if (timeSinceHeartbeat > 240000) {
+                // 发起商量
+                publishMessage(CONFIG.msgTypes.NEGOTIATE, { nick: state.username });
+                
+                // 等待一段时间收集回复 (例如 3秒)
+                setTimeout(() => {
+                    // 找出 ID ASCII 最大的
+                    const allIds = Object.keys(state.users);
+                    allIds.push(state.clientId);
+                    
+                    // 简单字符串比较 (ASCII)
+                    const maxId = allIds.reduce((a, b) => a > b ? a : b);
+                    
+                    if (maxId === state.clientId) {
+                        becomeHost();
+                        addSystemMessage('原房主离线，你已接任房主');
+                    }
+                }, 3000);
+                
+                // 重置 lastHeartbeat 防止频繁触发 (例如延长到2分钟，或者依赖新广播来更新)
+                state.lastHeartbeat = Date.now() + 120000; 
+            }
+        }, 10000); // 每10秒检查一次
+
+        // --- UI 更新与控制 ---
+
+        function updateStatus(text) {
+            document.getElementById('status-display').innerText = text;
+        }
+
+        function updateUser(id, nick, ts) {
+            state.users[id] = { nick, ts };
+            renderUserList();
+        }
+
+        function renderUserList() {
+            const list = document.getElementById('user-list');
+            list.innerHTML = '';
+            Object.keys(state.users).forEach(id => {
+                const u = state.users[id];
+                const div = document.createElement('div');
+                div.className = 'user-item';
+                div.innerHTML = `<span>${u.nick}</span> ${id === state.clientId ? '<span class="host-badge">(我)</span>' : ''}`;
+                list.appendChild(div);
+            });
+        }
+
+        function toggleChat() {
+            const msgs = document.getElementById('chat-messages');
+            const btn = document.querySelector('.chat-toggle-btn');
+            if (msgs.style.display === 'none') {
+                msgs.style.display = 'flex';
+                btn.innerText = '▼';
+            } else {
+                msgs.style.display = 'none';
+                btn.innerText = '▲';
+            }
+        }
+
+        function addChatMessage(nick, text, isSelf) {
+            const container = document.getElementById('chat-messages');
+            const div = document.createElement('div');
+            div.className = 'chat-msg';
+            if(isSelf) div.style.textAlign = 'right';
+            
+            div.innerHTML = `
+                <div class="chat-meta">${nick}</div>
+                <div class="chat-text">${text}</div>
+            `;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function addSystemMessage(text) {
+            const container = document.getElementById('chat-messages');
+            const div = document.createElement('div');
+            div.className = 'system-msg';
+            div.innerText = text;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function sendChat() {
+            const input = document.getElementById('chat-input');
+            const text = input.value.trim();
+            if (!text) return;
+            
+            // 显示自己的消息
+            addChatMessage(state.username, text, true);
+            
+            // 发送 (Base64编码内容)
+            publishMessage(CONFIG.msgTypes.CHAT, { 
+                nick: state.username,
+                content: utf8_to_b64(text) 
+            });
+            
+            input.value = '';
+        }
+
+        // --- 视频控制逻辑 ---
+        
+        function setupVideoControls() {
+            const btnPlay = document.getElementById('btn-play-pause');
+            const btnMute = document.getElementById('btn-mute');
+            const sliderVol = document.getElementById('volume-slider');
+            const progressContainer = document.getElementById('progress-bar');
+            const progressFill = document.getElementById('progress-fill');
+
+            // 播放/暂停
+            const togglePlay = () => {
+                if (video.paused) video.play();
+                else video.pause();
+            };
+
+            video.addEventListener('play', () => {
+                btnPlay.innerText = '⏸';
+                // 移除了 isHost 判断，所有人都可以广播播放动作
+                publishMessage(CONFIG.msgTypes.ACTION, { action: 'play' });
+            });
+
+            video.addEventListener('pause', () => {
+                btnPlay.innerText = '▶';
+                // 移除了 isHost 判断，所有人都可以广播暂停动作
+                publishMessage(CONFIG.msgTypes.ACTION, { action: 'pause' });
+            });
+
+            btnPlay.addEventListener('click', togglePlay);
+
+            // 音量
+            btnMute.addEventListener('click', () => {
+                video.muted = !video.muted;
+                btnMute.innerText = video.muted ? '🔇' : '🔊';
+            });
+            sliderVol.addEventListener('input', (e) => {
+                video.volume = e.target.value;
+            });
+
+            // 进度更新
+            video.addEventListener('timeupdate', () => {
+                const pct = (video.currentTime / video.duration) * 100;
+                progressFill.style.width = `${pct}%`;
+                document.getElementById('curr-time').innerText = formatTime(video.currentTime);
+            });
+
+            video.addEventListener('loadedmetadata', () => {
+                document.getElementById('total-time').innerText = formatTime(video.duration);
+            });
+
+            // 拖动进度条
+            let isDragging = false;
+            
+            progressContainer.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                updateProgressFromEvent(e);
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (isDragging) updateProgressFromEvent(e);
+            });
+
+            document.addEventListener('mouseup', () => {
+                if (isDragging) {
+                    isDragging = false;
+                    // 移除了 isHost 判断，所有人都可以广播跳转动作
+                    publishMessage(CONFIG.msgTypes.ACTION, { action: 'seek', time: video.currentTime });
+                }
+            });
+
+            function updateProgressFromEvent(e) {
+                const rect = progressContainer.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const width = rect.width;
+                let pct = x / width;
+                if (pct < 0) pct = 0;
+                if (pct > 1) pct = 1;
+                
+                video.currentTime = pct * video.duration;
+            }
+        }
+    </script>
+</body>
+</html>
