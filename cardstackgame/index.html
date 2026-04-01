@@ -21,6 +21,7 @@
             -webkit-user-select: none;
             -moz-user-select: none;
             -ms-user-select: none;
+            -webkit-tap-highlight-color: transparent;
         }
         /* 修改body和html */
         html, body {
@@ -225,6 +226,7 @@
             cursor: pointer;
             transition: all 0.3s ease;
             overflow: visible;
+            border: 2px solid rgba(180, 180, 180, 0.2);
         }
 
         .stack-position:hover {
@@ -250,23 +252,23 @@
         .deco-cards {
             position: absolute;
             width: 90%;
-            height: 40px;
+            height: 32px;
             left: 5%;
             border-radius: 6px;
+            border-bottom: solid rgba(0,0,0,0.14) 2px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: bold;
-            color: white;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            color: white;;
             transition: all 0.2s ease;
             cursor: pointer;
             font-size: 12px;
         }
 
         .deco-cards:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
+            
+            
         }
 
         /* 修复：只有真正选中的卡片才有浮动特效 */
@@ -530,7 +532,7 @@
             }
             
             .deco-cards {
-                height: 35px;
+                height: 31px;
                 font-size: 11px;
             }
             
@@ -623,7 +625,7 @@
                  :class="{ 
                      selected: selectedStack === stackIndex,
                      targeting: targetingStack === stackIndex,
-                     full: stack.length >= 28
+                     full: stack.length >= 50
                  }"
                  @click="handleStackClick(stackIndex)">
                 <div v-for="(card, cardIndex) in stack" 
@@ -633,7 +635,7 @@
                          `card-${card.color}`,
                          { selected: selectedStack === stackIndex && selectedCards.includes(cardIndex) }
                      ]"
-                     :style="{ bottom: `${cardIndex * 25}px` }">
+                     :style="{ bottom: `${cardIndex * 10}px` }">
                     {{ card.color }}
                 </div>
             </div>
@@ -710,7 +712,7 @@
                         <ul>
                             <li>20%概率生成连续同色卡片（2-3张）</li>
                             <li>50%概率生成收纳框所需颜色</li>
-                            <li>每个堆叠上限28张卡片</li>
+                            <li>每个堆叠上限50张卡片</li>
                         </ul>
                     </li>
                 </ul>
@@ -772,7 +774,7 @@
                 
                 <h3>注意事项</h3>
                 <ul>
-                    <li>每个堆叠最多容纳28张卡片</li>
+                    <li>每个堆叠最多容纳50张卡片</li>
                     <li>超过限制的移动会失败</li>
                     <li>游戏进度自动保存，可随时继续</li>
                     <li>合理规划收纳框颜色，优先收集堆叠中数量多的颜色</li>
@@ -888,7 +890,7 @@
                     }
                 },
 
-                // 移动卡片（检查28张上限）
+                // 移动卡片（检查50张上限）
                 moveCards(fromStack, toStack) {
                     const from = this.stacks[fromStack];
                     const to = this.stacks[toStack];
@@ -903,8 +905,8 @@
                         const startIndex = this.selectedCards[this.selectedCards.length - 1];
                         const cardsToMove = from.slice(startIndex);
                         
-                        // 检查目标堆叠是否会超过28张
-                        if (to.length + cardsToMove.length > 28) {
+                        // 检查目标堆叠是否会超过50张
+                        if (to.length + cardsToMove.length > 50) {
                             // 显示错误提示（这里简单处理，可以改为更友好的提示）
                             return;
                         }
@@ -1112,14 +1114,14 @@
                                 const sequenceColor = this.getRandomColor();
                                 
                                 for (let i = 0; i < sequenceLength; i++) {
-                                    if (stack.length < 28) {
+                                    if (stack.length < 50) {
                                         stack.push({ color: sequenceColor });
                                     }
                                 }
                                 cardsToAdd -= sequenceLength;
                             } else {
                                 // 生成单张卡片
-                                if (stack.length < 28) {
+                                if (stack.length < 50) {
                                     stack.push({ color: this.getRandomColor() });
                                 }
                                 cardsToAdd--;
